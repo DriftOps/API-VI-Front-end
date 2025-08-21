@@ -1,0 +1,125 @@
+<template>
+  <div class="chat-container">
+    <h1>Chat de Nutrição</h1>
+
+    <div class="chat-messages">
+      <div
+        v-for="(msg, i) in user.chatHistory"
+        :key="i"
+        :class="['message', msg.from]"
+      >
+        <strong>{{ msg.from === 'user' ? 'Você' : 'Agente' }}:</strong>
+        {{ msg.message }}
+      </div>
+    </div>
+
+    <div class="chat-input">
+      <input
+        v-model="newMessage"
+        @keyup.enter="sendMessage"
+        placeholder="Digite sua mensagem..."
+      />
+      <button @click="sendMessage">Enviar</button>
+    </div>
+  </div>
+</template>
+
+<script lang="ts">
+import { defineComponent, ref } from 'vue';
+import { useUserStore } from '../stores/user';
+import { sendMessageToAI } from '../api/openaiChat';
+
+export default defineComponent({
+  setup() {
+    const userStore = useUserStore();
+    const user = userStore.user;
+    const newMessage = ref('');
+
+    const sendMessage = async () => {
+      if (!newMessage.value.trim()) return;
+
+      // Adiciona a mensagem do usuário
+      userStore.addChatMessage(newMessage.value, 'user');
+
+      // Chama a IA
+      const reply = await sendMessageToAI(newMessage.value);
+
+      // Adiciona resposta da IA
+      userStore.addChatMessage(reply, 'agent');
+
+      // Limpa input
+      newMessage.value = '';
+    };
+
+    return { user, newMessage, sendMessage };
+  },
+});
+</script>
+
+<style scoped>
+.chat-container {
+  max-width: 600px;
+  margin: 20px auto;
+  display: flex;
+  flex-direction: column;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #2c3e50;
+}
+
+.chat-messages {
+  height: 400px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+}
+
+.message {
+  margin-bottom: 10px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  max-width: 80%;
+  word-wrap: break-word;
+}
+
+.message.user {
+  background-color: #cce5ff;
+  align-self: flex-end;
+  text-align: right;
+}
+
+.message.agent {
+  background-color: #d4edda;
+  align-self: flex-start;
+  text-align: left;
+}
+
+.chat-input {
+  display: flex;
+  gap: 10px;
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+
+.chat-input button {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  background-color: #2c3e50;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+}
+</style>
