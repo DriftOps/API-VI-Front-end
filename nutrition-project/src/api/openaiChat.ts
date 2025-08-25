@@ -1,14 +1,12 @@
-import { Configuration, OpenAIApi } from "openai";
+import OpenAI from "openai";
 
-const configuration = new Configuration({
+const openai = new OpenAI({
   apiKey: import.meta.env.VITE_OPENAI_API_KEY, // chave do .env
 });
 
-const openai = new OpenAIApi(configuration);
-
 export const sendMessageToAI = async (message: string) => {
   try {
-    const response = await openai.createChatCompletion({
+    const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
         { role: "system", content: "Você é um assistente nutricional." },
@@ -16,7 +14,7 @@ export const sendMessageToAI = async (message: string) => {
       ],
     });
 
-    return response.data.choices[0].message?.content || "Não entendi.";
+    return response.choices[0].message.content || "Não entendi.";
   } catch (err) {
     console.error(err);
     return "Erro ao se comunicar com a IA.";
