@@ -1,60 +1,71 @@
-<template>
-  <div class="chat-container">
-    <h1>Chat de Nutrição</h1>
-
-    <div class="chat-messages">
-      <div
-        v-for="(msg, i) in user.chatHistory"
-        :key="i"
-        :class="['message', msg.from]"
-      >
-        <strong>{{ msg.from === 'user' ? 'Você' : 'Agente' }}:</strong>
-        {{ msg.message }}
-      </div>
-    </div>
-
-    <div class="chat-input">
-      <input
-        v-model="newMessage"
-        @keyup.enter="sendMessage"
-        placeholder="Digite sua mensagem..."
-      />
-      <button @click="sendMessage">Enviar</button>
-    </div>
-  </div>
-</template>
-
-<script lang="ts">
-import { defineComponent, ref } from 'vue';
-import { useUserStore } from '../stores/user';
+import React, { useRef, useState, useEffect } from 'react';
 import { sendMessageToAI } from '../api/openaiChat';
 
-export default defineComponent({
-  setup() {
-    const userStore = useUserStore();
-    const user = userStore.user;
-    const newMessage = ref('');
+interface ChatMessage {
+  message: string;
+  from: 'user' | 'agent';
+}
 
-    const sendMessage = async () => {
-      if (!newMessage.value.trim()) return;
+interface User {
+  chatHistory: ChatMessage[];
+  addChatMessage: (msg: string, from: 'user' | 'agent') => void;
+}
 
-      // Adiciona a mensagem do usuário
-      userStore.addChatMessage(newMessage.value, 'user');
+// Replace this with your actual user store hook
+const useUserStore = (): { user: User } => {
+  // Dummy implementation for demonstration
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const addChatMessage = (msg: string, from: 'user' | 'agent') => {
+    setChatHistory((prev) => [...prev, { message: msg, from }]);
+  };
+  return { user: { chatHistory, addChatMessage } };
+};
 
-      // Chama a IA
-      const reply = await sendMessageToAI(newMessage.value);
+const Chat: React.FC = () => {
+  const userStore = useUserStore();
+  const user = userStore.user;
+  const [newMessage, setNewMessage] = useState('');
+  const messagesContainer = useRef<HTMLDivElement | null>(null);
 
-      // Adiciona resposta da IA
-      userStore.addChatMessage(reply, 'agent');
+  useEffect(() => {
+    if (messagesContainer.current) {
+      messagesContainer.current.scrollTop = messagesContainer.current.scrollHeight;
+    }
+  }, [user.chatHistory.length]);
 
-      // Limpa input
-      newMessage.value = '';
-    };
+  const sendMessage = async () => {
+    if (!newMessage.trim()) return;
 
-    return { user, newMessage, sendMessage };
-  },
-});
-</script>
+    user.addChatMessage(newMessage, 'user');
+    const reply: string = await sendMessageToAI(newMessage);
+    user.addChatMessage(reply, 'agent');
+    setNewMessage('');
+  };
+
+  return (
+    <div className="chat-container">
+      <h1>Chat de Nutrição</h1>
+      <div className="chat-messages" ref={messagesContainer}>
+        {user.chatHistory.map((msg, i) => (
+          <div key={i} className={`message ${msg.from}`}>
+            <strong>{msg.from === 'user' ? 'Você' : 'Agente'}:</strong> {msg.message}
+          </div>
+        ))}
+      </div>
+      <div className="chat-input">
+        <input
+          value={newMessage}
+          onChange={e => setNewMessage(e.target.value)}
+          onKeyUp={e => { if (e.key === 'Enter') sendMessage(); }}
+          placeholder="Digite sua mensagem..."
+        />
+        <button onClick={sendMessage}>Enviar</button>
+      </div>
+    </div>
+  );
+};
+
+export default Chat;
 
 <style scoped>
 .chat-container {
