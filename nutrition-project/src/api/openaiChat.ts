@@ -1,24 +1,15 @@
-import { Configuration, OpenAIApi } from "openai";
+import axios from "axios";
 
-const configuration = new Configuration({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY, // chave do .env
-});
-
-const openai = new OpenAIApi(configuration);
-
-export const sendMessageToAI = async (message: string) => {
+export async function sendMessageToAI(message: string): Promise<string> {
   try {
-    const response = await openai.createChatCompletion({
-      model: "gpt-3.5-turbo",
-      messages: [
-        { role: "system", content: "Você é um assistente nutricional." },
-        { role: "user", content: message },
-      ],
+    // Exemplo: chamada a um backend que usa IA
+    const res = await axios.post("http://localhost:8080/api/chat", {
+      prompt: message,
     });
 
-    return response.data.choices[0].message?.content || "Não entendi.";
+    return res.data.reply;
   } catch (err) {
-    console.error(err);
-    return "Erro ao se comunicar com a IA.";
+    console.error("Erro ao enviar mensagem:", err);
+    return "Desculpe, ocorreu um erro ao processar sua mensagem.";
   }
-};
+}
