@@ -4,7 +4,8 @@
 
     <div class="chat-messages">
       <div v-for="(msg, i) in user.chatHistory" :key="i" :class="['message', msg.from]">
-        <strong>{{ msg.from === 'user' ? 'Você' : 'Agente' }}:</strong> {{ msg.message }}
+        <strong>{{ msg.from === 'user' ? 'Você' : 'Agente' }}:</strong>
+        <span>{{ msg.message }}</span>
       </div>
     </div>
 

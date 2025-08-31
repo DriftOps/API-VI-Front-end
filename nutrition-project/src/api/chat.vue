@@ -1,6 +1,15 @@
 <template>
   <div class="chat-container">
     <h1>Chat de Nutrição</h1>
+    <div class="chat-messages" ref="messagesContainer">
+      <div
+        v-for="(msg, i) in chatHistory"
+        :key="i"
+        :class="['message', msg.from]"
+      >
+        <strong>{{ msg.from === 'user' ? 'Você' : 'Agente' }}:</strong> {{ msg.message }}
+      </div>
+    </div>
 
     <div class="chat-messages">
       <div
@@ -24,6 +33,32 @@
   </div>
 </template>
 
+
+<script setup>
+import { ref, onUpdated } from 'vue'
+import { sendMessageToAI } from '../api/openaiChat'
+
+const chatHistory = ref([])
+const newMessage = ref('')
+const messagesContainer = ref(null)
+
+function addChatMessage(msg, from) {
+  chatHistory.value.push({ message: msg, from })
+}
+
+async function sendMessage() {
+  if (!newMessage.value.trim()) return
+  addChatMessage(newMessage.value, 'user')
+  const reply = await sendMessageToAI(newMessage.value)
+  addChatMessage(reply, 'agent')
+  newMessage.value = ''
+}
+
+onUpdated(() => {
+  if (messagesContainer.value) {
+    messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+  }
+})
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 import { useUserStore } from '../stores/user';

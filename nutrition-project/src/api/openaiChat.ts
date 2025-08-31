@@ -1,3 +1,14 @@
+import axios from "axios";
+
+export async function sendMessageToAI(message: string): Promise<string> {
+  try {
+    // Exemplo: chamada a um backend que usa IA
+    const res = await axios.post("http://localhost:8080/api/chat", {
+      prompt: message,
+    });
+
+    return res.data.reply;
+
 import OpenAI from "openai";
 
 const openai = new OpenAI({
@@ -15,8 +26,9 @@ export const sendMessageToAI = async (message: string) => {
     });
 
     return response.choices[0].message.content || "Não entendi.";
+
   } catch (err) {
-    console.error(err);
-    return "Erro ao se comunicar com a IA.";
+    console.error("Erro ao enviar mensagem:", err);
+    return "Desculpe, ocorreu um erro ao processar sua mensagem.";
   }
-};
+}

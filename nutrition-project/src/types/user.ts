@@ -11,5 +11,11 @@ export interface User {
   activityLevel: string;
   dietaryPreferences: string[];
   chatHistory: { message: string; from: 'user' | 'agent'; date: string }[];
-  plan: { meals: { name: string; calories: number }[] } | null;
+  plan?: {
+    meals?: {
+      name: string;
+      calories: number;
+    }[];
+    description?: string;
+  };
 }
