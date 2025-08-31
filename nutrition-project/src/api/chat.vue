@@ -10,6 +10,18 @@
         <strong>{{ msg.from === 'user' ? 'Você' : 'Agente' }}:</strong> {{ msg.message }}
       </div>
     </div>
+
+    <div class="chat-messages">
+      <div
+        v-for="(msg, i) in user.chatHistory"
+        :key="i"
+        :class="['message', msg.from]"
+      >
+        <strong>{{ msg.from === 'user' ? 'Você' : 'Agente' }}:</strong>
+        {{ msg.message }}
+      </div>
+    </div>
+
     <div class="chat-input">
       <input
         v-model="newMessage"
@@ -20,6 +32,7 @@
     </div>
   </div>
 </template>
+
 
 <script setup>
 import { ref, onUpdated } from 'vue'
@@ -46,6 +59,36 @@ onUpdated(() => {
     messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
   }
 })
+<script lang="ts">
+import { defineComponent, ref } from 'vue';
+import { useUserStore } from '../stores/user';
+import { sendMessageToAI } from '../api/openaiChat';
+
+export default defineComponent({
+  setup() {
+    const userStore = useUserStore();
+    const user = userStore.user;
+    const newMessage = ref('');
+
+    const sendMessage = async () => {
+      if (!newMessage.value.trim()) return;
+
+      // Adiciona a mensagem do usuário
+      userStore.addChatMessage(newMessage.value, 'user');
+
+      // Chama a IA
+      const reply = await sendMessageToAI(newMessage.value);
+
+      // Adiciona resposta da IA
+      userStore.addChatMessage(reply, 'agent');
+
+      // Limpa input
+      newMessage.value = '';
+    };
+
+    return { user, newMessage, sendMessage };
+  },
+});
 </script>
 
 <style scoped>
