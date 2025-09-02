@@ -13,13 +13,13 @@
       <input v-model="newMessage" @keyup.enter="sendMessage" placeholder="Digite sua mensagem..." />
       <button @click="sendMessage">Enviar</button>
     </div>
- </div>
+  </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 import { useUserStore } from '../stores/user';
-import { sendMessageToAI } from '../api/chat.vue';
+import { sendMessageToAI } from '../api/openaiChat'
 
 export default defineComponent({
   setup() {
