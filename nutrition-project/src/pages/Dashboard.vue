@@ -1,43 +1,42 @@
 <template>
-  <div :class="['dashboard', darkMode ? 'dark' : '']">
+  <div class="dashboard">
     <div class="top-bar">
       <h1>Meu Painel Nutricional</h1>
-      <button class="theme-toggle" @click="toggleTheme">
-        <div class="icon" :class="{ dark: darkMode }">
-          <span class="sun">☀️</span>
-          <span class="moon">🌙</span>
-        </div>
+      <button class="theme-toggle" :class="{ dark: darkMode }" @click="toggleTheme">
+        <div class="circle"></div>
+        <span class="sun">☀️</span>
+        <span class="moon">🌙</span>
       </button>
     </div>
 
     <div class="user-cards">
       <!-- Objetivo -->
       <div class="card">
-        <label><TargetIcon :size="16" /> Objetivo</label>
+        <label><Target :size="16" /> Objetivo</label>
         <input v-model="user.goal" placeholder="Ex: Emagrecer, Ganhar massa" />
       </div>
 
       <!-- Peso -->
       <div class="card">
-        <label><ScaleIcon :size="16" /> Peso (kg)</label>
+        <label><Scale :size="16" /> Peso (kg)</label>
         <input type="number" v-model.number="user.weight" />
       </div>
 
       <!-- Altura -->
       <div class="card">
-        <label><RulerIcon :size="16" /> Altura (cm)</label>
+        <label><Ruler :size="16" /> Altura (cm)</label>
         <input type="number" v-model.number="user.height" />
       </div>
 
       <!-- Idade -->
       <div class="card">
-        <label><CakeIcon :size="16" /> Idade</label>
+        <label><Cake :size="16" /> Idade</label>
         <input type="number" v-model.number="user.age" />
       </div>
 
       <!-- Atividade -->
       <div class="card">
-        <label><ActivityIcon :size="16" /> Nível de Atividade</label>
+        <label><Activity :size="16" /> Nível de Atividade</label>
         <select v-model="user.activityLevel">
           <option value="">Selecione</option>
           <option>Sedentário</option>
@@ -61,8 +60,8 @@
             <button @click="removePreference(index)">x</button>
           </span>
         </div>
-        <input v-model="newPref" placeholder="Adicionar preferência" @keyup.enter="addPreference" />
-        <button @click="addPreference">Adicionar</button>
+        <input v-model="newPref" placeholder="Adicionar preferência" @keyup.enter="addPreference"/>
+        <button class="add-btn" @click="addPreference">Adicionar</button>
       </div>
 
       <!-- Restrições -->
@@ -75,18 +74,18 @@
           </span>
         </div>
         <input v-model="newRestriction" placeholder="Adicionar restrição" @keyup.enter="addRestriction" />
-        <button @click="addRestriction">Adicionar</button>
+        <button class="add-btn" @click="addRestriction">Adicionar</button>
       </div>
 
       <!-- Plano Alimentar -->
       <div class="card full">
-        <label><BookIcon :size="16" /> Plano Alimentar</label>
+        <label><Book :size="16" /> Plano Alimentar</label>
         <textarea v-model="planDescription" placeholder="Seu plano aparecerá aqui..."></textarea>
       </div>
 
       <!-- Gráfico -->
       <div class="card full">
-        <label><UtensilsIcon :size="16" /> Distribuição de Calorias</label>
+        <label><Utensils :size="16" /> Distribuição de Calorias</label>
         <PieChart :meals="user.plan?.meals ?? []" />
       </div>
 
@@ -97,35 +96,41 @@
 
 <script lang="ts">
 import { defineComponent, ref, onMounted, computed } from "vue";
-import { Target, Scale, Ruler, Cake, Activity, Book, Utensils } from "lucide-vue-next";
+import { TargetIcon, ScaleIcon, RulerIcon, CakeIcon, ActivityIcon, BookIcon, UtensilsIcon } from "lucide-vue-next";
 import { useUserStore } from "../stores/user";
 import type { User } from "../types/user";
 import { fetchUser, updateUser } from "../api/user";
 import PieChart from "@/components/PieChart.vue";
 
-
 export default defineComponent({
   components: { PieChart },
   setup() {
-    const TargetIcon = Target;
-    const ScaleIcon = Scale;
-    const RulerIcon = Ruler;
-    const CakeIcon = Cake;
-    const ActivityIcon = Activity;
-    const BookIcon = Book;
-    const UtensilsIcon = Utensils;
-
     const userStore = useUserStore();
     const user: User = userStore.user;
 
     const darkMode = ref(localStorage.getItem("theme") === "dark");
+
+    const applyTheme = () => {
+      const html = document.documentElement;
+      if (darkMode.value) {
+        html.classList.add("dark");
+        html.classList.remove("light");
+      } else {
+        html.classList.add("light");
+        html.classList.remove("dark");
+      }
+    };
+
     const toggleTheme = () => {
       darkMode.value = !darkMode.value;
       localStorage.setItem("theme", darkMode.value ? "dark" : "light");
+      applyTheme();
     };
 
-    const newPref = ref("");
-    const newRestriction = ref("");
+    onMounted(() => {
+      applyTheme();
+      loadUser();
+    });
 
     const loadUser = async () => {
       const data = await fetchUser(1);
@@ -137,6 +142,9 @@ export default defineComponent({
       userStore.setUser(updated);
       alert("Dados salvos!");
     };
+
+    const newPref = ref("");
+    const newRestriction = ref("");
 
     const addPreference = () => {
       if (!newPref.value.trim()) return;
@@ -181,8 +189,6 @@ export default defineComponent({
       },
     });
 
-    onMounted(loadUser);
-
     return {
       user,
       newPref,
@@ -209,22 +215,30 @@ export default defineComponent({
 });
 </script>
 
+
 <style scoped>
+* {
+  transition: background 0.3s, color 0.3s, border-color 0.3s;
+}
+
 .dashboard {
   max-width: 1000px;
   margin: 0 auto;
   padding: 30px;
   font-family: "Segoe UI", sans-serif;
+  background: var(--color-background);
+  color: var(--color-text);
+  min-height: 100vh;
+  transition: background 0.3s, color 0.3s;
 }
 
 h1 {
   text-align: center;
   margin-bottom: 30px;
-  color: #2c3e50;
   font-size: 28px;
+  color: var(--color-text);
 }
 
-/* Barra superior com botão de tema */
 .top-bar {
   display: flex;
   justify-content: space-between;
@@ -232,46 +246,68 @@ h1 {
   margin-bottom: 25px;
 }
 
-/* Botão estilo switch */
+/* Botão switch */
 .theme-toggle {
-  width: 60px;
-  height: 30px;
-  border-radius: 30px;
+  width: 50px;
+  height: 26px;
+  border-radius: 13px;
   border: none;
-  background: #ddd;
+  background: var(--card-border);
   cursor: pointer;
-  padding: 4px;
+  position: relative;
   display: flex;
   align-items: center;
-  position: relative;
+  justify-content: space-between;
+  padding: 0 4px;
+  box-sizing: border-box;
+}
+
+.theme-toggle .circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: left 0.3s;
+}
+
+.theme-toggle.dark .circle {
+  left: 26px;
 }
 
 .theme-toggle .icon {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: white;
-  position: absolute;
-  left: 4px;
-  top: 4px;
+  background: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  transition: left 0.3s, background 0.3s;
   font-size: 14px;
 }
 
-.theme-toggle .icon.dark {
-  left: 34px;
+.theme-toggle.dark .icon {
+  left: 26px;
 }
 
-/* Esconde um dos ícones */
+.theme-toggle .sun,
+.theme-toggle .moon {
+  font-size: 14px;
+  pointer-events: none;
+}
+
 .theme-toggle .sun {
-  display: block;
+  color: #ffbb33;
 }
 
 .theme-toggle .moon {
-  display: none;
+  color: #5555ff;
 }
 
 .theme-toggle .icon.dark .sun {
@@ -282,47 +318,7 @@ h1 {
   display: block;
 }
 
-/* DARK MODE THEME */
-.dark {
-  background: #1e1e2e;
-  color: #f8f9fa;
-}
-
-.dark .card,
-.dark .card label,
-.dark .card input,
-.dark .card select,
-.dark .card textarea,
-.dark .preferences .tag {
-  color: #f1f1f1;
-  /* texto claro no dark mode */
-  background-color: #2b2b3c;
-  /* fundo dos inputs e tags */
-  border-color: #444;
-}
-
-.dark .save-btn {
-  background: #0d6efd;
-}
-
-.dark .save-btn:hover {
-  background: #084cd6;
-}
-
-.dark .chat-input input {
-  background: #3a3a4e;
-  color: #f1f1f1;
-  border: 1px solid #555;
-}
-
-.dark .chat-input button {
-  background: #0d6efd;
-}
-
-.dark .chat-input button:hover {
-  background: #084cd6;
-}
-
+/* resto igual, usando var(--color-*) */
 .user-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -330,13 +326,15 @@ h1 {
 }
 
 .card {
-  background: white;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  color: var(--color-text);
   border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   padding: 20px;
   display: flex;
   flex-direction: column;
-  transition: transform 0.2s;
+  transition: transform 0.2s, background 0.3s, color 0.3s;
 }
 
 .card:hover {
@@ -346,7 +344,7 @@ h1 {
 .card label {
   font-weight: bold;
   margin-bottom: 8px;
-  color: #2c3e50;
+  color: var(--color-heading);
 }
 
 .card input,
@@ -354,8 +352,11 @@ h1 {
 .card textarea {
   padding: 10px;
   border-radius: 10px;
-  border: 1px solid #ddd;
   font-size: 15px;
+  background: var(--card-bg);
+  color: var(--color-text);
+  border: 1px solid var(--card-border);
+  outline: none;
 }
 
 .card textarea {
@@ -368,14 +369,14 @@ h1 {
 }
 
 .highlight {
-  background: #eafaf1;
-  border: 1px solid #28a745;
+  background: var(--highlight-bg, #eafaf1);
+  border: 1px solid var(--highlight-border, #28a745);
 }
 
 .imc {
   font-size: 22px;
   font-weight: bold;
-  color: #28a745;
+  color: var(--highlight-border, #28a745);
 }
 
 .preferences .tags {
@@ -386,20 +387,35 @@ h1 {
 }
 
 .preferences .tag {
-  background: #f1f3f5;
   padding: 5px 10px;
   border-radius: 20px;
   display: flex;
   align-items: center;
   gap: 6px;
+  background: var(--card-bg);
+  color: var(--color-text);
+}
+
+.dark .preferences .tag {
+  background: var(--highlight-bg);
 }
 
 .preferences .tag button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #c92a2a;
-  font-weight: bold;
+  background: #c92a2a;
+  color: #fff;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  padding: 0;
+  transition: background 0.2s;
+}
+
+.preferences .tag button:hover {
+  background: #a61e1e;
 }
 
 .save-btn {
@@ -407,7 +423,7 @@ h1 {
   padding: 12px;
   border-radius: 10px;
   border: none;
-  background: #2c3e50;
+  background: var(--save-btn-bg, #2c3e50);
   color: white;
   font-weight: bold;
   font-size: 16px;
@@ -416,6 +432,37 @@ h1 {
 }
 
 .save-btn:hover {
-  background: #1a252f;
+  background: var(--save-btn-hover, #1a252f);
+  transform: scale(1.03);
+}
+
+.preferences input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+  font-size: 14px;
+  outline: none;
+  background: var(--card-bg);
+  color: var(--color-text);
+  margin-top: 8px;
+}
+
+.add-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px 0;
+  border-radius: 10px;
+  border: none;
+  background: var(--save-btn-bg, #2c3e50);
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.add-btn:hover {
+  background: var(--save-btn-hover, #1a252f);
+  transform: scale(1.02);
 }
 </style>
