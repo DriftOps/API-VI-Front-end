@@ -1,19 +1,14 @@
 <template>
   <div class="login-page" :class="{ dark: darkMode }">
     <!-- Toggle de tema -->
-    <button class="theme-toggle" @click="toggleTheme">
-      <div class="icon" :class="{ dark: darkMode }">
-        <span class="sun">☀️</span>
-        <span class="moon">🌙</span>
-      </div>
+    <button class="theme-toggle" :class="{ dark: darkMode }" @click="toggleTheme">
+      <div class="circle"></div>
+      <span class="sun">☀️</span>
+      <span class="moon">🌙</span>
     </button>
 
     <!-- Logo -->
-    <img
-      :src="darkMode ? '/NutriXBlack.gif' : '/NutriX.gif'"
-      alt="NutriX Logo"
-      class="logo"
-    />
+    <img :src="darkMode ? '/NutriXBlack.gif' : '/NutriX.gif'" alt="NutriX Logo" class="logo" />
 
     <h1 class="login-text">Login</h1>
 
@@ -34,41 +29,30 @@
 import { defineComponent, ref, watch } from "vue";
 import { useUserStore } from "../stores/user";
 import { useRouter } from "vue-router";
+import { useThemeStore } from "@/stores/theme";
 
 export default defineComponent({
   setup() {
     const userStore = useUserStore();
     const router = useRouter();
+    const theme = useThemeStore();
 
     const email = ref("");
     const password = ref("");
 
     const login = () => {
       if (!email.value || !password.value) return;
-
       userStore.setUser({ email: email.value, name: "Felipe", id: 1 });
       router.push("/dashboard");
     };
 
-    // Estado do dark mode
-    const darkMode = ref(localStorage.getItem("theme") === "dark");
-
-    // Atualiza <html class="dark"> e salva no localStorage
-    watch(darkMode, (val) => {
-      if (val) {
-        document.documentElement.classList.add("dark");
-        localStorage.setItem("theme", "dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-        localStorage.setItem("theme", "light");
-      }
-    }, { immediate: true });
-
-    const toggleTheme = () => {
-      darkMode.value = !darkMode.value;
+    return {
+      email,
+      password,
+      login,
+      darkMode: theme.darkMode,
+      toggleTheme: theme.toggleTheme,
     };
-
-    return { email, password, login, darkMode, toggleTheme };
   },
 });
 </script>
@@ -87,7 +71,7 @@ export default defineComponent({
 .login-page.dark {
   background-color: #121212;
   color: white;
-  
+
 }
 
 .logo {
@@ -153,53 +137,46 @@ button:hover {
 
 /* Toggle */
 .theme-toggle {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  width: 60px;
-  height: 30px;
-  border-radius: 30px;
+  width: 50px;
+  height: 26px;
+  border-radius: 13px;
   border: none;
-  background: #ddd;
+  background: var(--card-border);
   cursor: pointer;
-  padding: 4px;
+  position: relative;
   display: flex;
   align-items: center;
-  position: relative;
+  justify-content: space-between;
+  padding: 0 4px;
+  box-sizing: border-box;
 }
 
-.theme-toggle .icon {
+.theme-toggle .circle {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: white;
+  background: #fff;
   position: absolute;
-  left: 4px;
-  top: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  font-size: 14px;
+  top: 2px;
+  left: 2px;
+  transition: left 0.3s;
 }
 
-.theme-toggle .icon.dark {
-  left: 34px;
+.theme-toggle.dark .circle {
+  left: 26px;
+}
+
+.theme-toggle .sun,
+.theme-toggle .moon {
+  font-size: 14px;
+  pointer-events: none;
 }
 
 .theme-toggle .sun {
-  display: block;
+  color: #ffbb33;
 }
 
 .theme-toggle .moon {
-  display: none;
-}
-
-.theme-toggle .icon.dark .sun {
-  display: none;
-}
-
-.theme-toggle .icon.dark .moon {
-  display: block;
+  color: #5555ff;
 }
 </style>

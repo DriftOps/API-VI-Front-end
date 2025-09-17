@@ -12,31 +12,41 @@
     <div class="user-cards">
       <!-- Objetivo -->
       <div class="card">
-        <label><Target :size="16" /> Objetivo</label>
+        <label>
+          <Target :size="16" /> Objetivo
+        </label>
         <input v-model="user.goal" placeholder="Ex: Emagrecer, Ganhar massa" />
       </div>
 
       <!-- Peso -->
       <div class="card">
-        <label><Scale :size="16" /> Peso (kg)</label>
+        <label>
+          <Scale :size="16" /> Peso (kg)
+        </label>
         <input type="number" v-model.number="user.weight" />
       </div>
 
       <!-- Altura -->
       <div class="card">
-        <label><Ruler :size="16" /> Altura (cm)</label>
+        <label>
+          <Ruler :size="16" /> Altura (cm)
+        </label>
         <input type="number" v-model.number="user.height" />
       </div>
 
       <!-- Idade -->
       <div class="card">
-        <label><Cake :size="16" /> Idade</label>
+        <label>
+          <Cake :size="16" /> Idade
+        </label>
         <input type="number" v-model.number="user.age" />
       </div>
 
       <!-- Atividade -->
       <div class="card">
-        <label><Activity :size="16" /> Nível de Atividade</label>
+        <label>
+          <Activity :size="16" /> Nível de Atividade
+        </label>
         <select v-model="user.activityLevel">
           <option value="">Selecione</option>
           <option>Sedentário</option>
@@ -60,7 +70,7 @@
             <button @click="removePreference(index)">x</button>
           </span>
         </div>
-        <input v-model="newPref" placeholder="Adicionar preferência" @keyup.enter="addPreference"/>
+        <input v-model="newPref" placeholder="Adicionar preferência" @keyup.enter="addPreference" />
         <button class="add-btn" @click="addPreference">Adicionar</button>
       </div>
 
@@ -79,13 +89,17 @@
 
       <!-- Plano Alimentar -->
       <div class="card full">
-        <label><Book :size="16" /> Plano Alimentar</label>
+        <label>
+          <Book :size="16" /> Plano Alimentar
+        </label>
         <textarea v-model="planDescription" placeholder="Seu plano aparecerá aqui..."></textarea>
       </div>
 
       <!-- Gráfico -->
       <div class="card full">
-        <label><Utensils :size="16" /> Distribuição de Calorias</label>
+        <label>
+          <Utensils :size="16" /> Distribuição de Calorias
+        </label>
         <PieChart :meals="user.plan?.meals ?? []" />
       </div>
 
@@ -101,12 +115,14 @@ import { useUserStore } from "../stores/user";
 import type { User } from "../types/user";
 import { fetchUser, updateUser } from "../api/user";
 import PieChart from "@/components/PieChart.vue";
+import { useThemeStore } from "@/stores/theme";
 
 export default defineComponent({
   components: { PieChart },
   setup() {
     const userStore = useUserStore();
     const user: User = userStore.user;
+    const theme = useThemeStore();
 
     const darkMode = ref(localStorage.getItem("theme") === "dark");
 
@@ -122,9 +138,7 @@ export default defineComponent({
     };
 
     const toggleTheme = () => {
-      darkMode.value = !darkMode.value;
-      localStorage.setItem("theme", darkMode.value ? "dark" : "light");
-      applyTheme();
+      theme.toggleTheme();
     };
 
     onMounted(() => {
@@ -200,8 +214,6 @@ export default defineComponent({
       saveUser,
       imc,
       imcCategoria,
-      darkMode,
-      toggleTheme,
       planDescription,
       TargetIcon,
       ScaleIcon,
@@ -210,6 +222,8 @@ export default defineComponent({
       ActivityIcon,
       BookIcon,
       UtensilsIcon,
+      darkMode: theme.darkMode,
+      toggleTheme: theme.toggleTheme,
     };
   },
 });
