@@ -4,8 +4,8 @@
       <h1>Meu Painel Nutricional</h1>
       <button class="theme-toggle" :class="{ dark: darkMode }" @click="toggleTheme">
         <div class="circle"></div>
-        <span class="sun">☀️</span>
-        <span class="moon">🌙</span>
+        <span class="sun">L</span>
+        <span class="moon">D</span>
       </button>
     </div>
 

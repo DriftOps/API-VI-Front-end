@@ -12,10 +12,17 @@
 
     <h1 class="login-text">Login</h1>
 
-    <input v-model="email" placeholder="Email" />
+    <!-- Mensagens de erro -->
+    <div v-if="errorMessage" class="error-message">
+      {{ errorMessage }}
+    </div>
+
+    <input v-model="email" placeholder="Email" type="email" />
     <input v-model="password" type="password" placeholder="Senha" />
 
-    <button @click="login">Entrar</button>
+    <button @click="login" :disabled="loading">
+      {{ loading ? 'Entrando...' : 'Entrar' }}
+    </button>
 
     <!-- Cadastro -->
     <p class="signup-text">
@@ -26,32 +33,69 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, watch } from "vue";
+import { defineComponent, ref, onMounted } from "vue";
 import { useUserStore } from "../stores/user";
 import { useRouter } from "vue-router";
 import { useThemeStore } from "@/stores/theme";
+import { api } from "@/services/api";
+import type { AuthResponse } from "@/types/user";
 
 export default defineComponent({
+  name: "LoginPage",
   setup() {
     const userStore = useUserStore();
     const router = useRouter();
-    const theme = useThemeStore();
+    const themeStore = useThemeStore();
 
     const email = ref("");
     const password = ref("");
+    const loading = ref(false);
+    const errorMessage = ref("");
 
-    const login = () => {
-      if (!email.value || !password.value) return;
-      userStore.setUser({ email: email.value, name: "Felipe", id: 1 });
-      router.push("/dashboard");
+    const login = async () => {
+      if (!email.value || !password.value) {
+        errorMessage.value = "Por favor, preencha todos os campos";
+        return;
+      }
+
+      loading.value = true;
+      errorMessage.value = "";
+
+      try {
+        const response = await api.post<AuthResponse>("/auth/login", {
+          email: email.value,
+          password: password.value
+        });
+
+        // Usa o novo método setAuthUser
+        userStore.setAuthUser(response.data);
+        
+        // Redireciona para o dashboard
+        router.push("/dashboard");
+
+      } catch (error: any) {
+        console.error("Erro no login:", error);
+        
+        if (error.response?.status === 401) {
+          errorMessage.value = "Email ou senha incorretos";
+        } else if (error.response?.data?.message) {
+          errorMessage.value = error.response.data.message;
+        } else {
+          errorMessage.value = "Erro ao fazer login. Tente novamente.";
+        }
+      } finally {
+        loading.value = false;
+      }
     };
 
     return {
       email,
       password,
+      loading,
+      errorMessage,
       login,
-      darkMode: theme.darkMode,
-      toggleTheme: theme.toggleTheme,
+      darkMode: themeStore.darkMode,
+      toggleTheme: themeStore.toggleTheme,
     };
   },
 });
@@ -71,11 +115,11 @@ export default defineComponent({
 .login-page.dark {
   background-color: #121212;
   color: white;
-
 }
 
 .logo {
   width: 300px;
+  margin-bottom: 20px;
 }
 
 input {
@@ -84,12 +128,12 @@ input {
   width: 450px;
   border-radius: 8px;
   border: 3px solid #ccc;
+  font-size: 16px;
 }
 
 input:hover {
-  border-color: #888;
+  border-color: #666;
   border-radius: 18px;
-
 }
 
 .login-page.dark input {
@@ -107,21 +151,38 @@ button {
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.2s ease;
+  font-size: 16px;
+  min-width: 120px;
 }
 
-button:hover {
+button:hover:not(:disabled) {
   background-color: #4338ca;
+  border-radius: 18px;
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
 }
 
 .login-text {
   font-size: 42px;
   color: #555;
+  margin-bottom: 20px;
+}
+
+.login-page.dark .login-text {
+  color: white;
 }
 
 .signup-text {
   margin-top: 16px;
   font-size: 16px;
   color: #555;
+}
+
+.login-page.dark .signup-text {
+  color: white;
 }
 
 .signup-link {
@@ -135,20 +196,41 @@ button:hover {
   color: #4338ca;
 }
 
+.error-message {
+  color: #e53e3e;
+  background-color: #fed7d7;
+  padding: 10px 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  border: 1px solid #feb2b2;
+}
+
+.login-page.dark .error-message {
+  color: #fed7d7;
+  background-color: #742a2a;
+  border-color: #742a2a;
+}
+
 /* Toggle */
 .theme-toggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
   width: 50px;
   height: 26px;
   border-radius: 13px;
   border: none;
-  background: var(--card-border);
+  background: #ccc;
   cursor: pointer;
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 4px;
   box-sizing: border-box;
+}
+
+.theme-toggle.dark {
+  background: #4f46e5;
 }
 
 .theme-toggle .circle {
@@ -159,7 +241,7 @@ button:hover {
   position: absolute;
   top: 2px;
   left: 2px;
-  transition: left 0.3s;
+  transition: left 0.3s ease;
 }
 
 .theme-toggle.dark .circle {
@@ -170,13 +252,5 @@ button:hover {
 .theme-toggle .moon {
   font-size: 14px;
   pointer-events: none;
-}
-
-.theme-toggle .sun {
-  color: #ffbb33;
-}
-
-.theme-toggle .moon {
-  color: #5555ff;
 }
 </style>
