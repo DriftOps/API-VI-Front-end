@@ -19,7 +19,7 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 import { useUserStore } from '../stores/user';
-import { sendMessageToAI } from '../api/openaiChat'
+import { sendMessageToAI } from '../api/chatApi'
 
 export default defineComponent({
   setup() {
