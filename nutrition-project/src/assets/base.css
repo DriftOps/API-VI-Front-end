@@ -1,0 +1,333 @@
+/* ===== Base de cores ===== */
+:root {
+  --vt-c-white: #ffffff;
+  --vt-c-white-soft: #f8f8f8;
+  --vt-c-white-mute: #f2f2f2;
+
+  --vt-c-black: #181818;
+  --vt-c-black-soft: #222222;
+  --vt-c-black-mute: #282828;
+
+  --vt-c-indigo: #2c3e50;
+
+  --vt-c-divider-light: rgba(60, 60, 60, 0.12);
+  --vt-c-divider-dark: rgba(84, 84, 84, 0.48);
+
+  --vt-c-text-light: var(--vt-c-indigo);
+  --vt-c-text-dark: var(--vt-c-white);
+}
+
+/* ===== Temas ===== */
+:root.light {
+  --color-background: var(--vt-c-white);
+  --color-background-soft: var(--vt-c-white-soft);
+  --color-text: var(--vt-c-indigo);
+  --color-heading: var(--vt-c-indigo);
+  --card-bg: var(--vt-c-white);
+  --card-border: var(--vt-c-divider-light);
+  --highlight-bg: #eafaf1;
+  --highlight-border: #28a745;
+  --save-btn-bg: #2c3e50;
+  --save-btn-hover: #1a252f;
+}
+
+:root.dark {
+  --color-background: var(--vt-c-black);
+  --color-background-soft: var(--vt-c-black-soft);
+  --color-text: var(--vt-c-white);
+  --color-heading: var(--vt-c-white);
+  --card-bg: #282828;
+  --card-border: #555;
+  --highlight-bg: #3a3a4e;
+  --highlight-border: #28a745;
+  --save-btn-bg: #555;
+  --save-btn-hover: #444;
+}
+
+/* ===== Global reset ===== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  font-weight: normal;
+  transition: background 0.3s, color 0.3s, border-color 0.3s;
+}
+
+body {
+  min-height: 100vh;
+  color: var(--color-text);
+  background: var(--color-background);
+  font-family:
+    Inter, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
+    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: color 0.5s, background-color 0.5s;
+}
+
+/* ===== Cards ===== */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.card label {
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: var(--color-heading);
+}
+
+.card input,
+.card select,
+.card textarea {
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+  font-size: 15px;
+  background: var(--card-bg);
+  color: var(--color-text);
+  outline: none;
+}
+
+.card textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.full {
+  grid-column: span 2;
+}
+
+.highlight {
+  background: var(--highlight-bg);
+  border: 1px solid var(--highlight-border);
+}
+
+.imc {
+  font-size: 22px;
+  font-weight: bold;
+  color: var(--highlight-border);
+}
+
+/* ===== Tags ===== */
+.preferences .tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.preferences .tag {
+  background: var(--color-background-soft);
+  padding: 5px 10px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text);
+}
+
+.preferences .tag button {
+  background: #c92a2a;
+  color: #fff;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  padding: 0;
+  transition: background 0.2s;
+}
+
+.preferences .tag button:hover {
+  background: #a61e1e;
+}
+
+/* ===== Botão salvar ===== */
+.save-btn {
+  grid-column: span 2;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: var(--save-btn-bg);
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.save-btn:hover {
+  background: var(--save-btn-hover);
+  transform: scale(1.03);
+}
+
+.save-btn:active {
+  transform: scale(0.97);
+}
+
+.save-btn:disabled {
+  background: gray;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ===== Títulos ===== */
+h1, h2, h3 {
+  color: var(--color-heading);
+}
+
+h1 {
+  font-size: 28px;
+  margin-bottom: 20px;
+}
+
+h2 {
+  font-size: 22px;
+  margin-bottom: 16px;
+}
+
+h3 {
+  font-size: 18px;
+  margin-bottom: 12px;
+}
+
+/* ===== Links ===== */
+a {
+  color: var(--vt-c-indigo);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* ===== Botões ===== */
+button {
+  font-family: inherit;
+}
+
+button:focus {
+  outline: 2px solid var(--vt-c-indigo);
+  outline-offset: 2px;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ===== Inputs ===== */
+input, select, textarea {
+  font-family: inherit;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #aaa;
+}
+
+.preferences input {
+  border-color: var(--card-border, #ccc);
+  border-radius: 10px;
+  transition: border-color 0.3s, border-radius 0.3s;
+}
+
+.preferences input:hover {
+  border-color: var(--card-border-hover, #000);
+  border-radius: 18px;
+}
+
+.dark .preferences input:hover {
+  border-color: var(--card-border-hover-dark, #fff);
+  border-radius: 18px;
+}
+
+/* ===== Layout ===== */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== Barra superior ===== */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.theme-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+
+.theme-toggle .icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  transition: background 0.3s, color 0.3s;
+}
+
+.theme-toggle .icon .sun,
+.theme-toggle .icon .moon {
+  position: absolute;
+  font-size: 18px;
+  transition: opacity 0.3s;
+}
+
+.theme-toggle .icon .sun {
+  opacity: 1;
+}
+
+.theme-toggle .icon .moon {
+  opacity: 0;
+}
+
+.theme-toggle .icon.dark {
+  background: var(--vt-c-black-soft);
+  color: var(--vt-c-white);
+}
+
+.theme-toggle .icon.dark .sun {
+  opacity: 0;
+}
+
+.theme-toggle .icon.dark .moon {
+  opacity: 1;
+}
