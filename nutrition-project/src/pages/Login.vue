@@ -75,6 +75,7 @@ export default defineComponent({
 
 <style scoped>
 .login-page {
+  width: 85vw; /* ocupar toda a largura da viewport */
   min-height: 100vh;
   display: flex;
   flex-direction: column;
