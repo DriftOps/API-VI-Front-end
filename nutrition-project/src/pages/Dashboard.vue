@@ -222,26 +222,6 @@ export default defineComponent({
 }
 
 .dashboard {
-<<<<<<< HEAD
-  width: 90vw; /* ocupar toda a largura da viewport */
-  min-height: 100vh; /* ocupar toda a altura da tela */
-  padding: 50px 0px; /* espaço interno nas laterais */
-  box-sizing: border-box;
-  font-family: "Segoe UI", sans-serif;
-  background: var(--color-background);
-  color: var(--color-text);
-}
-
-.user-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* aumenta o mínimo dos cards */
-  gap: 20px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-
-=======
   max-width: 1000px;
   margin: 0 auto;
   padding: 30px;
@@ -252,7 +232,6 @@ export default defineComponent({
   transition: background 0.3s, color 0.3s;
 }
 
->>>>>>> df8b2dd77dd6b12d2113462bdcaf232dc334dcdf
 h1 {
   text-align: center;
   margin-bottom: 30px;
