@@ -1,33 +1,42 @@
-import { defineStore } from 'pinia';
-import type { User } from '../types/user';
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
+import type { User } from '../types/user'
 
-export const useUserStore = defineStore('user', {
-  state: () => ({
-    user: {
-      id: null,
-      name: '',
-      email: '',
-      password: '',
-      goal: '',
-      height: null,
-      weight: null,
-      age: null,
-      restrictions: [] as string[],
-      activityLevel: '',
-      dietaryPreferences: [] as string[],
-      chatHistory: [] as { message: string; from: 'user' | 'agent'; date: string }[],
-      plan: null as { meals: { name: string; calories: number }[] } | null,
-    } as User,
-  }),
-  actions: {
-    setUser(data: Partial<User>) { // Partial permite atualizar só alguns campos
-      this.user = { ...this.user, ...data };
-    },
-    addChatMessage(message: string, from: 'user' | 'agent') {
-      this.user.chatHistory.push({ message, from, date: new Date().toISOString() });
-    },
-    setPlan(plan: { meals: { name: string; calories: number }[] }) {
-      this.user.plan = plan;
-    },
-  },
-});
+export const useUserStore = defineStore('user', () => {
+  const user = ref<User | null>(null)
+  const isAuthenticated = ref(false)
+
+  const setUser = (userData: User) => {
+    user.value = userData
+    isAuthenticated.value = true
+    // Salva no localStorage
+    localStorage.setItem('user', JSON.stringify(userData))
+    localStorage.setItem('token', userData.token)
+  }
+
+  const clearUser = () => {
+    user.value = null
+    isAuthenticated.value = false
+    localStorage.removeItem('user')
+    localStorage.removeItem('token')
+  }
+
+  // Verifica se há usuário salvo no localStorage ao inicializar
+  const initUser = () => {
+    const savedUser = localStorage.getItem('user')
+    const savedToken = localStorage.getItem('token')
+    
+    if (savedUser && savedToken) {
+      user.value = JSON.parse(savedUser)
+      isAuthenticated.value = true
+    }
+  }
+
+  return {
+    user,
+    isAuthenticated,
+    setUser,
+    clearUser,
+    initUser
+  }
+})
