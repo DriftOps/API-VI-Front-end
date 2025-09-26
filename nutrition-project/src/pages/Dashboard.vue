@@ -2,113 +2,295 @@
   <div class="dashboard">
     <div class="top-bar">
       <h1>Meu Painel Nutricional</h1>
-      <button class="theme-toggle" :class="{ dark: darkMode }" @click="toggleTheme">
-        <div class="circle"></div>
-        <span class="sun">☀️</span>
-        <span class="moon">🌙</span>
-      </button>
+      <div class="user-info">
+        <span>Olá, {{ user?.name }}!</span> <!-- ✅ Safe navigation -->
+        <button @click="logout" class="logout-btn">Sair</button>
+        <button class="theme-toggle" :class="{ dark: darkMode }" @click="toggleTheme">
+          <div class="circle"></div>
+          <span class="sun">☀️</span>
+          <span class="moon">🌙</span>
+        </button>
+      </div>
     </div>
 
-    <div class="user-cards">
-      <!-- Objetivo -->
+    <div v-if="loading" class="loading">Carregando...</div>
+    <div v-if="error" class="error-message">{{ error }}</div>
+
+    <div v-else class="user-cards">
+      <!-- Dados Pessoais -->
       <div class="card">
-        <label><Target :size="16" /> Objetivo</label>
-        <input v-model="user.goal" placeholder="Ex: Emagrecer, Ganhar massa" />
+        <label>Objetivo</label>
+        <select v-model="userData.goal">
+          <option value="">Selecione</option>
+          <option value="LOSE_WEIGHT">Perder peso rápido</option>
+          <option value="LOSE_FAT">Reduzir gordura corporal</option>
+          <option value="GAIN_WEIGHT">Ganhar peso saudável</option>
+          <option value="BUILD_MUSCLE">Aumentar massa magra</option>
+          <option value="IMPROVE_ENDURANCE">Melhorar resistência física</option>
+          <option value="IMPROVE_STRENGTH">Aumentar força muscular</option>
+          <option value="MAINTAIN_WEIGHT">Manter peso ideal</option>
+        </select>
       </div>
 
       <!-- Peso -->
       <div class="card">
-        <label><Scale :size="16" /> Peso (kg)</label>
-        <input type="number" v-model.number="user.weight" />
+        <label>Peso (kg)</label>
+        <input type="number" v-model.number="userData.weight" step="0.1" />
       </div>
 
       <!-- Altura -->
       <div class="card">
-        <label><Ruler :size="16" /> Altura (cm)</label>
-        <input type="number" v-model.number="user.height" />
+        <label>Altura (cm)</label>
+        <input type="number" v-model.number="userData.height" />
       </div>
 
-      <!-- Idade -->
+      <!-- Data de Nascimento -->
       <div class="card">
-        <label><Cake :size="16" /> Idade</label>
-        <input type="number" v-model.number="user.age" />
+        <label>Data de Nascimento</label>
+        <input type="date" v-model="userData.birthDate" />
+        <small v-if="userData.birthDate">Idade: {{ calculateAge }} anos</small>
       </div>
 
       <!-- Atividade -->
       <div class="card">
-        <label><Activity :size="16" /> Nível de Atividade</label>
-        <select v-model="user.activityLevel">
+        <label>Nível de Atividade</label>
+        <select v-model="userData.activityLevel">
           <option value="">Selecione</option>
-          <option>Sedentário</option>
-          <option>Moderado</option>
-          <option>Ativo</option>
+          <option value="SEDENTARY">Sedentário</option>
+          <option value="LIGHT">Leve</option>
+          <option value="MODERATE">Moderado</option>
+          <option value="ACTIVE">Ativo</option>
+          <option value="VERY_ACTIVE">Muito Ativo</option>
         </select>
       </div>
 
       <!-- IMC -->
       <div class="card highlight">
         <label>IMC</label>
-        <p class="imc">{{ imc }} <span>({{ imcCategoria }})</span></p>
+        <p class="imc">{{ imc }} <span>({{ imcCategory }})</span></p>
+        <small>Peso: {{ userData.weight || 0 }}kg | Altura: {{ userData.height || 0 }}cm</small>
       </div>
 
-      <!-- Preferências -->
+      <!-- Preferências Alimentares -->
       <div class="card preferences">
         <label>Preferências Alimentares</label>
         <div class="tags">
-          <span v-for="(pref, index) in user.dietaryPreferences" :key="index" class="tag">
+          <span v-for="(pref, index) in userData.dietaryPreferences" :key="index" class="tag">
             {{ pref }}
-            <button @click="removePreference(index)">x</button>
+            <button @click="removePreference(index)">×</button>
           </span>
         </div>
-        <input v-model="newPref" placeholder="Adicionar preferência" @keyup.enter="addPreference"/>
-        <button class="add-btn" @click="addPreference">Adicionar</button>
+        <div class="add-input">
+          <input v-model="newPreference" placeholder="Nova preferência" @keyup.enter="addPreference" />
+          <button @click="addPreference" class="add-btn-small">+</button>
+        </div>
       </div>
 
-      <!-- Restrições -->
+      <!-- Restrições Alimentares -->
       <div class="card preferences">
         <label>Restrições Alimentares</label>
         <div class="tags">
-          <span v-for="(rest, index) in user.restrictions" :key="index" class="tag">
-            {{ rest }}
-            <button @click="removeRestriction(index)">x</button>
+          <span v-for="(restriction, index) in userData.restrictions" :key="index" class="tag">
+            {{ restriction }}
+            <button @click="removeRestriction(index)">×</button>
           </span>
         </div>
-        <input v-model="newRestriction" placeholder="Adicionar restrição" @keyup.enter="addRestriction" />
-        <button class="add-btn" @click="addRestriction">Adicionar</button>
+        <div class="add-input">
+          <input v-model="newRestriction" placeholder="Nova restrição" @keyup.enter="addRestriction" />
+          <button @click="addRestriction" class="add-btn-small">+</button>
+        </div>
       </div>
 
       <!-- Plano Alimentar -->
       <div class="card full">
-        <label><Book :size="16" /> Plano Alimentar</label>
-        <textarea v-model="planDescription" placeholder="Seu plano aparecerá aqui..."></textarea>
+        <label>Plano Alimentar</label>
+        <textarea v-model="userData.plan" placeholder="Descreva seu plano alimentar..." rows="4"></textarea>
       </div>
 
-      <!-- Gráfico -->
-      <div class="card full">
-        <label><Utensils :size="16" /> Distribuição de Calorias</label>
-        <PieChart :meals="user.plan?.meals ?? []" />
+      <!-- Ações -->
+      <div class="card actions">
+        <button @click="saveUser" :disabled="saving" class="save-btn">
+          {{ saving ? 'Salvando...' : 'Salvar Alterações' }}
+        </button>
+        <button @click="resetForm" class="reset-btn">Cancelar</button>
       </div>
-
-      <button @click="saveUser" class="save-btn">Salvar Alterações</button>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, computed } from "vue";
-import { TargetIcon, ScaleIcon, RulerIcon, CakeIcon, ActivityIcon, BookIcon, UtensilsIcon } from "lucide-vue-next";
+import { defineComponent, ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import { useUserStore } from "../stores/user";
-import type { User } from "../types/user";
-import { fetchUser, updateUser } from "../api/user";
-import PieChart from "@/components/PieChart.vue";
+import { fetchCurrentUser, updateUser } from "../api/user";
+import type { User, UserUpdateDTO } from "../types/user";
 
 export default defineComponent({
-  components: { PieChart },
+  name: 'Dashboard',
   setup() {
+    const router = useRouter();
     const userStore = useUserStore();
-    const user: User = userStore.user;
 
+    const loading = ref(true);
+    const saving = ref(false);
+    const error = ref("");
     const darkMode = ref(localStorage.getItem("theme") === "dark");
+
+    const newPreference = ref("");
+    const newRestriction = ref("");
+
+    // Inicializar com arrays vazios para evitar undefined
+    const userData = ref<UserUpdateDTO>({
+      goal: "",
+      weight: undefined,
+      height: undefined,
+      birthDate: "",
+      activityLevel: "",
+      dietaryPreferences: [],
+      restrictions: [],
+      plan: ""
+    });
+
+    // Safe navigation para user
+    const user = computed(() => userStore.user);
+
+    // Carregar dados do usuário
+    const loadUser = async () => {
+      try {
+        loading.value = true;
+        const userResponse = await fetchCurrentUser();
+
+        // Adicionar token do localStorage ao user
+        const token = localStorage.getItem('token');
+        const userWithToken: User = {
+          ...userResponse,
+          token: token || '',
+          plan: typeof userResponse.plan === 'string'
+            ? userResponse.plan
+            : (userResponse.plan ? JSON.stringify(userResponse.plan) : '')
+        };
+
+        userStore.setUser(userWithToken);
+
+        // Preencher formulário com dados do usuário
+        userData.value = {
+          goal: userResponse.goal || "",
+          weight: userResponse.weight || undefined,
+          height: userResponse.height || undefined,
+          birthDate: userResponse.birthDate || "",
+          activityLevel: userResponse.activityLevel || "",
+          dietaryPreferences: userResponse.dietaryPreferences || [],
+          restrictions: userResponse.restrictions || [],
+          plan: String(userResponse.plan || "")
+        };
+      } catch (err) {
+        error.value = "Erro ao carregar dados do usuário";
+        console.error(err);
+      } finally {
+        loading.value = false;
+      }
+    };
+
+    // Calcular idade a partir da data de nascimento
+    const calculateAge = computed(() => {
+      if (!userData.value.birthDate) return 0;
+      const birthDate = new Date(userData.value.birthDate);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      return age;
+    });
+
+    // Calcular IMC
+    const imc = computed(() => {
+      if (!userData.value.weight || !userData.value.height) return "—";
+      const heightInMeters = userData.value.height / 100;
+      return (userData.value.weight / (heightInMeters * heightInMeters)).toFixed(1);
+    });
+
+    const imcCategory = computed(() => {
+      const value = parseFloat(imc.value);
+      if (isNaN(value)) return "—";
+      if (value < 18.5) return "Abaixo do peso";
+      if (value < 24.9) return "Peso normal";
+      if (value < 29.9) return "Sobrepeso";
+      return "Obesidade";
+    });
+
+    // Métodos com verificação de array
+    const addPreference = () => {
+      if (newPreference.value.trim()) {
+        if (!userData.value.dietaryPreferences) {
+          userData.value.dietaryPreferences = [];
+        }
+        userData.value.dietaryPreferences.push(newPreference.value.trim());
+        newPreference.value = "";
+      }
+    };
+
+    const removePreference = (index: number) => {
+      if (userData.value.dietaryPreferences) {
+        userData.value.dietaryPreferences.splice(index, 1);
+      }
+    };
+
+    const addRestriction = () => {
+      if (newRestriction.value.trim()) {
+        if (!userData.value.restrictions) {
+          userData.value.restrictions = [];
+        }
+        userData.value.restrictions.push(newRestriction.value.trim());
+        newRestriction.value = "";
+      }
+    };
+
+    const removeRestriction = (index: number) => {
+      if (userData.value.restrictions) {
+        userData.value.restrictions.splice(index, 1);
+      }
+    };
+
+    // Salvar dados
+    const saveUser = async () => {
+      try {
+        saving.value = true;
+        const updatedUser = await updateUser(userData.value);
+
+        // Adicionar token ao user atualizado
+        const token = localStorage.getItem('token');
+        const userWithToken: User = {
+          ...updatedUser,
+          token: token || ''
+        };
+
+        userStore.setUser(userWithToken);
+        error.value = "";
+        alert("Dados salvos com sucesso!");
+      } catch (err) {
+        error.value = "Erro ao salvar dados";
+        console.error(err);
+      } finally {
+        saving.value = false;
+      }
+    };
+
+    const resetForm = () => {
+      loadUser();
+    };
+
+    const logout = () => {
+      userStore.clearUser();
+      router.push("/");
+    };
+
+    const toggleTheme = () => {
+      darkMode.value = !darkMode.value;
+      localStorage.setItem("theme", darkMode.value ? "dark" : "light");
+      applyTheme();
+    };
 
     const applyTheme = () => {
       const html = document.documentElement;
@@ -121,100 +303,35 @@ export default defineComponent({
       }
     };
 
-    const toggleTheme = () => {
-      darkMode.value = !darkMode.value;
-      localStorage.setItem("theme", darkMode.value ? "dark" : "light");
-      applyTheme();
-    };
-
     onMounted(() => {
       applyTheme();
       loadUser();
     });
 
-    const loadUser = async () => {
-      const data = await fetchUser(1);
-      userStore.setUser(data);
-    };
-
-    const saveUser = async () => {
-      const updated = await updateUser(user);
-      userStore.setUser(updated);
-      alert("Dados salvos!");
-    };
-
-    const newPref = ref("");
-    const newRestriction = ref("");
-
-    const addPreference = () => {
-      if (!newPref.value.trim()) return;
-      userStore.user.dietaryPreferences.push(newPref.value.trim());
-      newPref.value = "";
-    };
-
-    const removePreference = (index: number) => {
-      userStore.user.dietaryPreferences.splice(index, 1);
-    };
-
-    const addRestriction = () => {
-      if (!newRestriction.value.trim()) return;
-      userStore.user.restrictions.push(newRestriction.value.trim());
-      newRestriction.value = "";
-    };
-
-    const removeRestriction = (index: number) => {
-      userStore.user.restrictions.splice(index, 1);
-    };
-
-    const imc = computed(() => {
-      if (!user.weight || !user.height) return "—";
-      const alturaMetros = user.height / 100;
-      return (user.weight / (alturaMetros * alturaMetros)).toFixed(1);
-    });
-
-    const imcCategoria = computed(() => {
-      const valor = parseFloat(imc.value as string);
-      if (isNaN(valor)) return "—";
-      if (valor < 18.5) return "Abaixo do peso";
-      if (valor < 24.9) return "Peso normal";
-      if (valor < 29.9) return "Sobrepeso";
-      return "Obesidade";
-    });
-
-    const planDescription = computed({
-      get: () => user.plan?.description || "",
-      set: (val: string) => {
-        if (!user.plan) user.plan = { description: val };
-        else user.plan.description = val;
-      },
-    });
-
     return {
       user,
-      newPref,
+      userData,
+      loading,
+      saving,
+      error,
+      darkMode,
+      newPreference,
       newRestriction,
+      calculateAge,
+      imc,
+      imcCategory,
       addPreference,
       removePreference,
       addRestriction,
       removeRestriction,
       saveUser,
-      imc,
-      imcCategoria,
-      darkMode,
+      resetForm,
+      logout,
       toggleTheme,
-      planDescription,
-      TargetIcon,
-      ScaleIcon,
-      RulerIcon,
-      CakeIcon,
-      ActivityIcon,
-      BookIcon,
-      UtensilsIcon,
     };
   },
 });
 </script>
-
 
 <style scoped>
 * {
@@ -222,29 +339,22 @@ export default defineComponent({
 }
 
 .dashboard {
-  width: 90vw; /* ocupar toda a largura da viewport */
-  min-height: 100vh; /* ocupar toda a altura da tela */
-  padding: 50px 0px; /* espaço interno nas laterais */
+  width: 100vw; /* ✅ Mudar para 100vw */
+  min-height: 100vh;
+  padding: 20px; /* ✅ Reduzir padding */
   box-sizing: border-box;
   font-family: "Segoe UI", sans-serif;
   background: var(--color-background);
   color: var(--color-text);
+  overflow-x: hidden; /* ✅ Prevenir scroll horizontal */
 }
 
 .user-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* aumenta o mínimo dos cards */
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* ✅ Ajustar minmax */
   gap: 20px;
-  width: 100%;
+  max-width: 100%; /* ✅ Limitar largura máxima */
   box-sizing: border-box;
-}
-
-
-h1 {
-  text-align: center;
-  margin-bottom: 30px;
-  font-size: 28px;
-  color: var(--color-text);
 }
 
 .top-bar {
@@ -252,6 +362,22 @@ h1 {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 25px;
+  flex-wrap: wrap; /* ✅ Permitir quebra de linha */
+  gap: 15px; /* ✅ Espaço entre elementos */
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap; /* ✅ Permitir quebra */
+}
+
+h1 {
+  margin-bottom: 30px;
+  font-size: 28px;
+  color: var(--color-text);
+  text-align: left; /* ✅ Alinhar à esquerda */
 }
 
 /* Botão switch */
@@ -285,52 +411,24 @@ h1 {
   left: 26px;
 }
 
-.theme-toggle .icon {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: absolute;
-  left: 2px;
-  top: 2px;
-  transition: left 0.3s, background 0.3s;
-  font-size: 14px;
-}
-
-.theme-toggle.dark .icon {
-  left: 26px;
-}
-
 .theme-toggle .sun,
 .theme-toggle .moon {
   font-size: 14px;
   pointer-events: none;
 }
 
-.theme-toggle .sun {
-  color: #ffbb33;
+.logout-btn {
+  padding: 8px 16px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  white-space: nowrap; /* ✅ Evitar quebra de texto */
 }
 
-.theme-toggle .moon {
-  color: #5555ff;
-}
-
-.theme-toggle .icon.dark .sun {
-  display: none;
-}
-
-.theme-toggle .icon.dark .moon {
-  display: block;
-}
-
-/* resto igual, usando var(--color-*) */
-.user-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 20px;
+.logout-btn:hover {
+  background: #c82333;
 }
 
 .card {
@@ -343,6 +441,7 @@ h1 {
   display: flex;
   flex-direction: column;
   transition: transform 0.2s, background 0.3s, color 0.3s;
+  min-width: 0; /* ✅ Importante para grid */
 }
 
 .card:hover {
@@ -365,6 +464,8 @@ h1 {
   color: var(--color-text);
   border: 1px solid var(--card-border);
   outline: none;
+  width: 100%; /* ✅ Garantir largura total */
+  box-sizing: border-box; /* ✅ Incluir padding na largura */
 }
 
 .card textarea {
@@ -372,8 +473,15 @@ h1 {
   resize: vertical;
 }
 
+/* ✅ CORREÇÃO: Ajustar cards full para telas menores */
 .full {
-  grid-column: span 2;
+  grid-column: 1 / -1; /* ✅ Ocupar todas as colunas */
+}
+
+@media (max-width: 768px) {
+  .full {
+    grid-column: 1; /* ✅ Em mobile, ocupar apenas uma coluna */
+  }
 }
 
 .highlight {
@@ -402,6 +510,7 @@ h1 {
   gap: 6px;
   background: var(--card-bg);
   color: var(--color-text);
+  font-size: 14px;
 }
 
 .dark .preferences .tag {
@@ -419,6 +528,8 @@ h1 {
   justify-content: center;
   font-size: 12px;
   padding: 0;
+  border: none;
+  cursor: pointer;
   transition: background 0.2s;
 }
 
@@ -426,9 +537,30 @@ h1 {
   background: #a61e1e;
 }
 
+.add-input {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.add-btn-small {
+  padding: 8px 12px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap; /* ✅ Permitir quebra */
+}
+
 .save-btn {
-  grid-column: span 2;
-  padding: 12px;
+  padding: 12px 24px;
   border-radius: 10px;
   border: none;
   background: var(--save-btn-bg, #2c3e50);
@@ -437,6 +569,8 @@ h1 {
   font-size: 16px;
   cursor: pointer;
   transition: background 0.3s;
+  flex: 1; /* ✅ Ocupar espaço disponível */
+  min-width: 150px; /* ✅ Largura mínima */
 }
 
 .save-btn:hover {
@@ -444,33 +578,98 @@ h1 {
   transform: scale(1.03);
 }
 
-.preferences input {
-  width: 100%;
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid var(--card-border);
-  font-size: 14px;
-  outline: none;
-  background: var(--card-bg);
-  color: var(--color-text);
-  margin-top: 8px;
+.save-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
 }
 
-.add-btn {
-  width: 100%;
-  margin-top: 8px;
-  padding: 10px 0;
-  border-radius: 10px;
+.reset-btn {
+  padding: 12px 24px;
+  background: #6c757d;
+  color: white;
   border: none;
-  background: var(--save-btn-bg, #2c3e50);
-  color: #fff;
-  font-weight: bold;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background 0.3s, transform 0.2s;
+  flex: 1; /* ✅ Ocupar espaço disponível */
+  min-width: 150px; /* ✅ Largura mínima */
 }
 
-.add-btn:hover {
-  background: var(--save-btn-hover, #1a252f);
-  transform: scale(1.02);
+.reset-btn:hover {
+  background: #545b62;
+}
+
+/* ✅ Media Queries para responsividade */
+@media (max-width: 1200px) {
+  .user-cards {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard {
+    padding: 15px; /* ✅ Reduzir padding em mobile */
+  }
+  
+  .top-bar {
+    flex-direction: column; /* ✅ Empilhar verticalmente */
+    align-items: flex-start;
+  }
+  
+  .user-info {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .user-cards {
+    grid-template-columns: 1fr; /* ✅ Uma coluna em mobile */
+    gap: 15px;
+  }
+  
+  h1 {
+    font-size: 24px; /* ✅ Reduzir tamanho da fonte */
+    text-align: center; /* ✅ Centralizar em mobile */
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard {
+    padding: 10px;
+  }
+  
+  .card {
+    padding: 15px;
+  }
+  
+  .actions {
+    flex-direction: column; /* ✅ Empilhar botões */
+  }
+  
+  .save-btn, .reset-btn {
+    min-width: 100%; /* ✅ Largura total em mobile */
+  }
+}
+
+.loading {
+  text-align: center;
+  padding: 20px;
+  font-size: 18px;
+  color: var(--color-text);
+}
+
+.error-message {
+  background-color: #fee;
+  border: 1px solid #fcc;
+  color: #c33;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.dark .error-message {
+  background-color: #322;
+  border-color: #633;
+  color: #f99;
 }
 </style>
