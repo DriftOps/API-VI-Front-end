@@ -95,7 +95,7 @@ export const getPendingApprovals = async (): Promise<number> => {
   return users.filter(user => !user.approved).length;
 };
 
-export const approveUser = async (userId: number): Promise<User> => {
+export const approveUser = async (userId: number): Promise<void> => {
   const token = localStorage.getItem('token');
   console.log('✅ [APPROVE USER] Iniciando...', userId);
   
@@ -112,7 +112,7 @@ export const approveUser = async (userId: number): Promise<User> => {
     throw new Error('Erro ao aprovar usuário');
   }
 
-  const approvedUser = await response.json();
-  console.log('✅ [APPROVE USER] Usuário aprovado retornado:', approvedUser);
-  return approvedUser;
+  // Não tenta parsear JSON, só verifica se foi bem sucedido
+  console.log('✅ [APPROVE USER] Usuário aprovado com sucesso');
+  // Retorna void já que o backend não envia dados
 };

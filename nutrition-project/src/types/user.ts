@@ -1,3 +1,5 @@
+import type { ChatMessage } from '@/stores/user'
+
 export interface User {
   id: number
   name: string
@@ -13,7 +15,7 @@ export interface User {
   dietaryPreferences: string[]
   restrictions: string[]
   plan?: string
-  chatHistory?: string
+  chatHistory?: ChatMessage[]
   approved: boolean
   createdAt?: string
 }

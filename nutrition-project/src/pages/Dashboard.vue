@@ -1,68 +1,6 @@
 <template>
-  <div class="dashboard-container">
-    <!-- Sidebar -->
-    <div class="sidebar" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
-      <div class="sidebar-header">
-        <img 
-          :src="darkMode ? '/NutriXBlack.gif' : '/NutriX.gif'" 
-          alt="NutriX Logo" 
-          class="sidebar-logo"
-        />
-        <button @click="toggleSidebar" class="sidebar-toggle">
-          <ChevronLeftIcon v-if="!sidebarCollapsed" :size="20" />
-          <ChevronRightIcon v-else :size="20" />
-        </button>
-      </div>
-
-      <nav class="sidebar-nav">
-        <router-link to="/dashboard" class="nav-item" active-class="active">
-          <BarChart3Icon :size="20" class="nav-icon" />
-          <span class="nav-text">Meu Painel</span>
-        </router-link>
-
-        <router-link to="/chat" class="nav-item" active-class="active">
-          <MessageSquareIcon :size="20" class="nav-icon" />
-          <span class="nav-text">Chat</span>
-        </router-link>
-
-        <router-link to="/perfil" class="nav-item" active-class="active">
-          <UserIcon :size="20" class="nav-icon" />
-          <span class="nav-text">Meu Perfil</span>
-        </router-link>
-
-        <!-- Menu Admin -->
-        <div v-if="user?.role === 'ADMIN'" class="admin-section">
-          <div class="section-label" v-if="!sidebarCollapsed">Administração</div>
-          <router-link to="/admin/users" class="nav-item admin-item" active-class="active">
-            <UsersIcon :size="20" class="nav-icon" />
-            <span class="nav-text">Gerenciar Usuários</span>
-            <span v-if="pendingApprovals > 0" class="badge">{{ pendingApprovals }}</span>
-          </router-link>
-        </div>
-      </nav>
-
-      <div class="sidebar-footer">
-        <div class="user-info">
-          <div class="user-avatar">{{ user?.name?.charAt(0) || 'U' }}</div>
-          <div v-if="!sidebarCollapsed" class="user-details">
-            <div class="user-name">{{ user?.name }}</div>
-            <div class="user-role">{{ user?.role }}</div>
-          </div>
-        </div>
-        <div class="sidebar-actions">
-          <button @click="toggleTheme" class="theme-btn" :title="darkMode ? 'Modo Claro' : 'Modo Escuro'">
-            <SunIcon v-if="darkMode" :size="18" />
-            <MoonIcon v-else :size="18" />
-          </button>
-          <button @click="logout" class="logout-btn" title="Sair">
-            <LogOutIcon :size="18" />
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Conteúdo Principal -->
-    <div class="main-content" :class="{ 'expanded': sidebarCollapsed }">
+  <DashboardLayout>
+    <div class="dashboard-content">
       <div class="content-header">
         <h1>
           <BarChart3Icon :size="24" class="header-icon" />
@@ -152,9 +90,9 @@
             </label>
             <p class="imc">{{ imc }} <span class="imc-category">({{ imcCategory }})</span></p>
             <small class="imc-details">
-              <ScaleIcon :size="12" />
-              Peso: {{ userData.weight || 0 }}kg | 
-              <RulerIcon :size="12" />
+              <ScaleIcon :size="14" />
+              Peso: {{ userData.weight || 0 }}kg |
+              <RulerIcon :size="14" />
               Altura: {{ userData.height || 0 }}cm
             </small>
           </div>
@@ -226,78 +164,60 @@
         </div>
       </div>
     </div>
-  </div>
+  </DashboardLayout>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, onMounted, watch } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import { defineComponent, ref, computed, onMounted } from "vue";
+import { useRoute } from "vue-router";
 import { useUserStore } from "../stores/user";
-import { fetchCurrentUser, updateUser, getPendingApprovals } from "../api/user";
-import type { User as UserType, UserUpdateDTO } from "../types/user"; // ✅ Renomear import
+import { fetchCurrentUser, updateUser } from "../api/user";
+import type { User as UserType, UserUpdateDTO } from "../types/user";
+import DashboardLayout from '@/layouts/DashboardLayout.vue';
 
-// ✅ Renomear todos os ícones para evitar conflitos
-import { 
-  BarChart3 as BarChart3Icon, 
-  MessageSquare as MessageSquareIcon, 
-  User as UserIcon, 
-  Users as UsersIcon, 
-  Sun as SunIcon, 
-  Moon as MoonIcon, 
-  LogOut as LogOutIcon, 
-  ChevronLeft as ChevronLeftIcon, 
-  ChevronRight as ChevronRightIcon,
-  Target as TargetIcon, 
-  Scale as ScaleIcon, 
-  Ruler as RulerIcon, 
-  Calendar as CalendarIcon, 
-  CalendarDays as CalendarDaysIcon, 
-  Activity as ActivityIcon, 
-  HeartPulse as HeartPulseIcon, 
-  Apple as AppleIcon, 
-  Ban as BanIcon, 
+// ✅ Importar apenas os ícones que você usa no dashboard
+import {
+  BarChart3 as BarChart3Icon,
+  Target as TargetIcon,
+  Scale as ScaleIcon,
+  Ruler as RulerIcon,
+  Calendar as CalendarIcon,
+  CalendarDays as CalendarDaysIcon,
+  Activity as ActivityIcon,
+  HeartPulse as HeartPulseIcon,
+  Apple as AppleIcon,
+  Ban as BanIcon,
   BookOpen as BookOpenIcon,
-  Plus as PlusIcon, 
-  X as XIcon, 
-  Save as SaveIcon, 
+  Plus as PlusIcon,
+  X as XIcon,
+  Save as SaveIcon,
   RotateCcw as RotateCcwIcon
 } from 'lucide-vue-next';
 
 export default defineComponent({
-  name: 'DashboardLayout',
+  name: 'Dashboard',
   components: {
-    BarChart3Icon, 
-    MessageSquareIcon, 
-    UserIcon, 
-    UsersIcon, 
-    SunIcon, 
-    MoonIcon, 
-    LogOutIcon, 
-    ChevronLeftIcon, 
-    ChevronRightIcon,
-    TargetIcon, 
-    ScaleIcon, 
-    RulerIcon, 
-    CalendarIcon, 
-    CalendarDaysIcon, 
-    ActivityIcon, 
-    HeartPulseIcon, 
-    AppleIcon, 
-    BanIcon, 
+    DashboardLayout,
+    BarChart3Icon,
+    TargetIcon,
+    ScaleIcon,
+    RulerIcon,
+    CalendarIcon,
+    CalendarDaysIcon,
+    ActivityIcon,
+    HeartPulseIcon,
+    AppleIcon,
+    BanIcon,
     BookOpenIcon,
-    PlusIcon, 
-    XIcon, 
-    SaveIcon, 
+    PlusIcon,
+    XIcon,
+    SaveIcon,
     RotateCcwIcon
   },
   setup() {
-    const router = useRouter();
     const route = useRoute();
     const userStore = useUserStore();
-    
-    const sidebarCollapsed = ref(false);
-    const darkMode = ref(localStorage.getItem("theme") === "dark");
-    const pendingApprovals = ref(0);
+
     const loading = ref(true);
     const saving = ref(false);
     const error = ref("");
@@ -318,10 +238,9 @@ export default defineComponent({
 
     const user = computed(() => userStore.user);
 
-    // ✅ Corrigir o tipo do pageTitles
     const pageTitles: Record<string, string> = {
       '/dashboard': 'Meu Painel Nutricional',
-      '/chat': 'Chat com Nutricionista',
+      '/chat': 'Chat com Nutricionista', 
       '/perfil': 'Meu Perfil',
       '/admin/users': 'Gerenciar Usuários'
     };
@@ -335,18 +254,18 @@ export default defineComponent({
       try {
         loading.value = true;
         const userResponse = await fetchCurrentUser();
-        
+
         const token = localStorage.getItem('token');
-        const userWithToken: UserType = { // ✅ Usar UserType
+        const userWithToken: UserType = {
           ...userResponse,
           token: token || '',
-          plan: typeof userResponse.plan === 'string' 
-            ? userResponse.plan 
+          plan: typeof userResponse.plan === 'string'
+            ? userResponse.plan
             : (userResponse.plan ? JSON.stringify(userResponse.plan) : '')
         };
-        
+
         userStore.setUser(userWithToken);
-        
+
         userData.value = {
           goal: userResponse.goal || "",
           weight: userResponse.weight || undefined,
@@ -358,10 +277,6 @@ export default defineComponent({
           plan: String(userResponse.plan || "")
         };
 
-        if (userResponse.role === 'ADMIN') {
-          const approvals = await getPendingApprovals();
-          pendingApprovals.value = approvals;
-        }
       } catch (err) {
         error.value = "Erro ao carregar dados do usuário";
         console.error(err);
@@ -370,7 +285,7 @@ export default defineComponent({
       }
     };
 
-    // Métodos existentes (calculateAge, imc, imcCategory, etc.)
+    // Métodos calculados
     const calculateAge = computed(() => {
       if (!userData.value.birthDate) return 0;
       const birthDate = new Date(userData.value.birthDate);
@@ -434,13 +349,13 @@ export default defineComponent({
       try {
         saving.value = true;
         const updatedUser = await updateUser(userData.value);
-        
+
         const token = localStorage.getItem('token');
-        const userWithToken: UserType = { // ✅ Usar UserType
+        const userWithToken: UserType = {
           ...updatedUser,
           token: token || ''
         };
-        
+
         userStore.setUser(userWithToken);
         error.value = "";
       } catch (err) {
@@ -455,45 +370,13 @@ export default defineComponent({
       loadData();
     };
 
-    const toggleSidebar = () => {
-      sidebarCollapsed.value = !sidebarCollapsed.value;
-    };
-
-    const toggleTheme = () => {
-      darkMode.value = !darkMode.value;
-      localStorage.setItem("theme", darkMode.value ? "dark" : "light");
-      applyTheme();
-    };
-
-    const applyTheme = () => {
-      const html = document.documentElement;
-      if (darkMode.value) {
-        html.classList.add("dark");
-        html.classList.remove("light");
-      } else {
-        html.classList.add("light");
-        html.classList.remove("dark");
-      }
-    };
-
-    const logout = () => {
-      userStore.clearUser();
-      router.push("/login");
-    };
-
     onMounted(() => {
-      applyTheme();
       loadData();
     });
-
-    watch(darkMode, applyTheme, { immediate: true });
 
     return {
       user,
       userData,
-      sidebarCollapsed,
-      darkMode,
-      pendingApprovals,
       loading,
       saving,
       error,
@@ -508,186 +391,15 @@ export default defineComponent({
       addRestriction,
       removeRestriction,
       saveUser,
-      resetForm,
-      toggleSidebar,
-      toggleTheme,
-      logout
+      resetForm
     };
   },
 });
 </script>
 
 <style scoped>
-.dashboard-container {
-  display: flex;
-  min-height: 100vh;
-  background: var(--color-background);
-  color: var(--color-text);
-}
-
-.sidebar {
-  width: 280px;
-  background: var(--sidebar-bg, #2c3e50);
-  color: white;
-  display: flex;
-  flex-direction: column;
-  transition: width 0.3s ease;
-  position: fixed;
-  height: 100vh;
-  z-index: 1000;
-}
-
-.sidebar-collapsed {
-  width: 70px;
-}
-
-.sidebar-header {
-  padding: 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.sidebar-logo {
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
-}
-
-.sidebar-toggle {
-  background: none;
-  border: none;
-  color: white;
-  cursor: pointer;
-  padding: 5px;
-}
-
-.sidebar-nav {
-  flex: 1;
-  padding: 20px 0;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  padding: 12px 20px;
-  color: rgba(255,255,255,0.8);
-  text-decoration: none;
-  transition: all 0.3s ease;
-  position: relative;
-}
-
-.nav-item:hover {
-  background: rgba(255,255,255,0.1);
-  color: white;
-}
-
-.nav-item.active {
-  background: var(--primary-color, #4f46e5);
-  color: white;
-}
-
-.nav-icon {
-  margin-right: 15px;
-  min-width: 20px;
-}
-
-.sidebar-collapsed .nav-text {
-  display: none;
-}
-
-.admin-section {
-  margin-top: 20px;
-  border-top: 1px solid rgba(255,255,255,0.1);
-  padding-top: 20px;
-}
-
-.section-label {
-  padding: 0 20px 10px;
-  font-size: 12px;
-  text-transform: uppercase;
-  opacity: 0.6;
-  font-weight: bold;
-}
-
-.admin-item {
-  background: rgba(255,255,255,0.05);
-}
-
-.badge {
-  background: #ef4444;
-  color: white;
-  border-radius: 10px;
-  padding: 2px 8px;
-  font-size: 12px;
-  margin-left: auto;
-}
-
-.sidebar-footer {
-  padding: 20px;
-  border-top: 1px solid rgba(255,255,255,0.1);
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.user-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--primary-color, #4f46e5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  margin-right: 10px;
-}
-
-.user-details {
-  flex: 1;
-}
-
-.user-name {
-  font-weight: bold;
-  font-size: 14px;
-}
-
-.user-role {
-  font-size: 12px;
-  opacity: 0.7;
-  text-transform: uppercase;
-}
-
-.sidebar-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.theme-btn, .logout-btn {
-  background: rgba(255,255,255,0.1);
-  border: none;
-  color: white;
-  padding: 8px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.theme-btn:hover, .logout-btn:hover {
-  background: rgba(255,255,255,0.2);
-}
-
-.main-content {
-  flex: 1;
-  margin-left: 280px;
-  transition: margin-left 0.3s ease;
-}
-
-.main-content.expanded {
-  margin-left: 70px;
+.dashboard-content {
+  width: 100%;
 }
 
 .content-header {
@@ -748,12 +460,14 @@ export default defineComponent({
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: 12px;
-  padding: 20px;
-  transition: transform 0.2s;
+  padding: 24px;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .card:hover {
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .card-label {
@@ -761,56 +475,369 @@ export default defineComponent({
   align-items: center;
   gap: 8px;
   font-weight: 600;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   color: var(--color-heading);
+  font-size: 14px;
 }
 
 .label-icon {
   color: var(--primary-color);
 }
 
-.user-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
+/* Estilos específicos para diferentes tipos de cards */
+.card.highlight {
+  background: linear-gradient(135deg, var(--primary-color) 0%, #554946 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
 }
 
-.card {
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 12px;
-  padding: 20px;
-  transition: transform 0.2s;
+.card.highlight .card-label,
+.card.highlight .label-icon {
+  color: white;
 }
 
-.card:hover {
-  transform: translateY(-2px);
+.card.preferences {
+  grid-column: span 2;
 }
 
-.card-label {
+.card.full {
+  grid-column: 1 / -1;
+}
+
+.card.actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+}
+
+/* Inputs e selects */
+input, select, textarea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid var(--input-border);
+  border-radius: 8px;
+  background: var(--input-bg);
+  color: var(--input-text);
+  font-size: 14px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--input-placeholder);
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--input-focus-border);
+  box-shadow: 0 0 0 3px var(--input-focus-ring);
+}
+
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 40px;
+}
+
+/* Tags */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tag {
+  background: var(--primary-color);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.tag:hover {
+  background: var(--primary-hover);
+  transform: scale(1.05);
+}
+
+.remove-tag {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  transition: background 0.2s ease;
+}
+
+.remove-tag:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.add-input {
+  display: flex;
+  gap: 8px;
+}
+
+.add-input input {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.add-btn-small {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s ease;
+  min-width: 44px;
+}
+
+.add-btn-small:hover {
+  background: var(--primary-hover);
+  transform: scale(1.05);
+}
+
+/* Botões */
+.save-btn, .reset-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
   font-weight: 600;
-  margin-bottom: 10px;
-  color: var(--color-heading);
+  font-size: 14px;
+  transition: all 0.2s ease;
+  min-height: 44px;
 }
 
+.save-btn {
+  background: var(--primary-color);
+  color: white;
+  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+}
 
-/* Responsividade */
+.save-btn:hover:not(:disabled) {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(79, 70, 229, 0.3);
+}
+
+.save-btn:disabled {
+  background: var(--card-border);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.reset-btn {
+  background: var(--card-bg);
+  color: var(--color-text);
+  border: 2px solid var(--card-border);
+}
+
+.reset-btn:hover {
+  background: var(--card-border);
+  border-color: var(--color-text-secondary);
+}
+
+/* Textos auxiliares */
+.age-text, .imc-details {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(#fff);
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+.imc {
+  font-size: 28px;
+  font-weight: bold;
+  margin: 8px 0;
+}
+
+.imc-category {
+  font-size: 14px;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--color-text-secondary);
+  font-size: 16px;
+}
+
+.error-message {
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  color: var(--error-text);
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  font-weight: 500;
+}
+
+.user-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+/* Cards especiais */
+.card.preferences {
+  grid-column: span 2;
+}
+
+.card.full {
+  grid-column: 1 / -1;
+}
+
+.card.actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+}
+
+/* Textarea específico */
+textarea {
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+/* Header do conteúdo */
+.content-header {
+  background: var(--card-bg);
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--card-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0;
+}
+
+.content-header h1 {
+  margin: 0;
+  font-size: 28px;
+  color: var(--color-heading);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-icon {
+  color: var(--primary-color);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.welcome-text {
+  font-size: 16px;
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.user-role-badge {
+  background: var(--primary-color);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+@media (max-width: 1024px) {
+  .user-cards {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  
+  .card.preferences {
+    grid-column: 1;
+  }
+}
+
 @media (max-width: 768px) {
-  .sidebar {
-    width: 70px;
-  }
-  
-  .main-content {
-    margin-left: 70px;
-  }
-  
   .content-header {
     flex-direction: column;
-    gap: 10px;
+    gap: 16px;
     align-items: flex-start;
+    padding: 20px;
+  }
+  
+  .user-cards {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .card.preferences,
+  .card.full,
+  .card.actions {
+    grid-column: 1;
+  }
+  
+  .card.actions {
+    flex-direction: column;
+  }
+  
+  .save-btn, .reset-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .content-area {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-header h1 {
+    font-size: 24px;
+  }
+  
+  .card {
+    padding: 20px;
+  }
+  
+  .add-input {
+    flex-direction: column;
+  }
+  
+  .add-btn-small {
+    width: 100%;
+    justify-content: center;
   }
 }
 </style>

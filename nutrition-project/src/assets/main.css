@@ -1,10 +1,16 @@
 @import './base.css';
 
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  font-weight: normal;
+  width: 100%;
 }
 
 a,
@@ -32,4 +38,68 @@ a,
     grid-template-columns: 1fr 1fr;
     padding: 0 2rem;
   }
+}
+
+:root {
+  /* Cores Light Mode */
+  --color-background: #ffffff;
+  --color-text: #1f2937;
+  --color-heading: #111827;
+  --color-text-secondary: #6b7280;
+  
+  /* Cores dos componentes */
+  --card-bg: #ffffff;
+  --card-border: #e5e7eb;
+  --sidebar-bg: #2c3e50;
+  --sidebar-border: #374151;
+  --sidebar-hover: rgba(255, 255, 255, 0.1);
+  
+  /* Cores primárias */
+  --primary-color: #4f46e5;
+  --primary-hover: #4338ca;
+  
+  /* Estados */
+  --error-bg: #fef2f2;
+  --error-border: #fecaca;
+  --error-text: #dc2626;
+  
+  /* Inputs */
+  --input-bg: #ffffff;
+  --input-border: #d1d5db;
+  --input-text: #1f2937;
+  --input-placeholder: #9ca3af;
+  --input-focus-border: #4f46e5;
+  --input-focus-ring: rgba(79, 70, 229, 0.2);
+}
+
+.dark {
+  /* Cores Dark Mode */
+  --color-background: #121212;
+  --color-text: #e5e7eb;
+  --color-heading: #f9fafb;
+  --color-text-secondary: #9ca3af;
+  
+  /* Cores dos componentes */
+  --card-bg: #1f2937;
+  --card-border: #374151;
+  --sidebar-bg: #111827;
+  --sidebar-border: #374151;
+  --sidebar-hover: rgba(255, 255, 255, 0.1);
+  
+  /* Cores primárias */
+  --primary-color: #6366f1;
+  --primary-hover: #818cf8;
+  
+  /* Estados */
+  --error-bg: #422;
+  --error-border: #633;
+  --error-text: #f99;
+  
+  /* Inputs */
+  --input-bg: #374151;
+  --input-border: #4b5563;
+  --input-text: #f9fafb;
+  --input-placeholder: #9ca3af;
+  --input-focus-border: #6366f1;
+  --input-focus-ring: rgba(99, 102, 241, 0.2);
 }
