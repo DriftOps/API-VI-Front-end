@@ -14,7 +14,7 @@ export interface User {
   restrictions: string[]
   plan?: string
   chatHistory?: string
-  approved?: boolean
+  approved: boolean
   createdAt?: string
 }
 

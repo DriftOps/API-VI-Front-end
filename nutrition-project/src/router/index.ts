@@ -12,8 +12,10 @@ const routes = [
   { path: '/signup', component: Signup },
   { 
     path: '/dashboard', 
-    component: Dashboard,
-    meta: { requiresAuth: true }
+    component: () => import('../pages/Dashboard.vue'),
+    children: [
+      { path: 'admin/users', component: () => import('../pages/admin/AdminUsers.vue') }
+    ]
   },
   { 
     path: '/chat', 

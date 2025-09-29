@@ -62,18 +62,32 @@ export const fetchCurrentUser = async (): Promise<User> => {
 
 export const getAllUsers = async (): Promise<User[]> => {
   const token = localStorage.getItem('token');
+  console.log('🔍 [GET ALL USERS] Iniciando...');
+  console.log('🔍 [GET ALL USERS] Token:', token ? 'Presente' : 'Faltando');
+  console.log('🔍 [GET ALL USERS] URL:', `${API_URL}/users`);
   
-  const response = await fetch(`${API_URL}/users`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-  });
+  try {
+    const response = await fetch(`${API_URL}/users`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
 
-  if (!response.ok) {
-    throw new Error('Erro ao carregar usuários');
+    console.log('🔍 [GET ALL USERS] Response status:', response.status);
+    console.log('🔍 [GET ALL USERS] Response ok:', response.ok);
+
+    if (!response.ok) {
+      throw new Error('Erro ao carregar usuários');
+    }
+
+    const users = await response.json();
+    console.log('🔍 [GET ALL USERS] Dados recebidos:', users);
+    return users;
+    
+  } catch (error) {
+    console.error('🔍 [GET ALL USERS] Erro completo:', error);
+    throw error;
   }
-
-  return response.json();
 };
 
 export const getPendingApprovals = async (): Promise<number> => {
@@ -81,8 +95,9 @@ export const getPendingApprovals = async (): Promise<number> => {
   return users.filter(user => !user.approved).length;
 };
 
-export const approveUser = async (userId: number): Promise<void> => {
+export const approveUser = async (userId: number): Promise<User> => {
   const token = localStorage.getItem('token');
+  console.log('✅ [APPROVE USER] Iniciando...', userId);
   
   const response = await fetch(`${API_URL}/users/${userId}/approve`, {
     method: 'PATCH',
@@ -91,7 +106,13 @@ export const approveUser = async (userId: number): Promise<void> => {
     },
   });
 
+  console.log('✅ [APPROVE USER] Response status:', response.status);
+  
   if (!response.ok) {
     throw new Error('Erro ao aprovar usuário');
   }
+
+  const approvedUser = await response.json();
+  console.log('✅ [APPROVE USER] Usuário aprovado retornado:', approvedUser);
+  return approvedUser;
 };

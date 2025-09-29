@@ -5,6 +5,10 @@
       <p>Gerencie os usuários do sistema e aprove novos cadastros</p>
     </div>
 
+    <div v-if="loading" class="loading-state">
+      <p>Carregando usuários...</p>
+    </div>
+
     <div class="users-grid">
       <!-- Card de Estatísticas -->
       <div class="stats-card">
@@ -37,12 +41,12 @@
                 <div class="user-email">{{ user.email }}</div>
                 <div class="user-meta">
                   <span class="user-role">{{ user.role }}</span>
-                  <span class="signup-date">Cadastrado em: {{ formatDate(user.createdAt) }}</span>
+                  <span class="signup-date">Cadastrado em: {{ formatDate(user.createdAt ?? '') }}</span>
                 </div>
               </div>
             </div>
             <div class="user-actions">
-              <button @click="approveUser(user.id)" class="btn-approve" :disabled="approvingUserId === user.id">
+              <button @click="handleApproveUser(user.id)" class="btn-approve" :disabled="approvingUserId === user.id">
                 {{ approvingUserId === user.id ? 'Aprovando...' : 'Aprovar' }}
               </button>
               <button @click="viewUserDetails(user)" class="btn-view">Ver Detalhes</button>
@@ -78,7 +82,8 @@
                 <td>
                   <div class="table-actions">
                     <button @click="viewUserDetails(user)" class="btn-sm">Ver</button>
-                    <button v-if="!user.approved" @click="approveUser(user.id)" class="btn-sm btn-success">Aprovar</button>
+                    <button v-if="!user.approved" @click="handleApproveUser(user.id)"
+                      class="btn-sm btn-success">Aprovar</button>
                   </div>
                 </td>
               </tr>
@@ -86,13 +91,39 @@
           </table>
         </div>
       </div>
+      <!-- Modal -->
+      <div v-if="showUserModal" class="modal-overlay">
+        <div class="modal">
+          <h3>Detalhes do Usuário</h3>
+          <p><strong>Nome:</strong> {{ selectedUser?.name }}</p>
+          <p><strong>Email:</strong> {{ selectedUser?.email }}</p>
+          <p><strong>Role:</strong> {{ selectedUser?.role }}</p>
+          <p><strong>Status:</strong> {{ selectedUser?.approved ? 'Aprovado' : 'Pendente' }}</p>
+          <p><strong>Cadastrado em:</strong> {{ formatDate(selectedUser?.createdAt ?? '') }}</p>
+
+          <div class="modal-actions">
+            <button v-if="selectedUser && !selectedUser.approved" @click="handleApproveUser(selectedUser.id)"
+              class="btn-approve" :disabled="approvingUserId === selectedUser.id">
+              {{ approvingUserId === selectedUser.id ? 'Aprovando...' : 'Aprovar' }}
+            </button>
+            <button @click="closeUserModal" class="btn-close">Fechar</button>
+          </div>
+        </div>
+      </div>
+      <!-- Animação de Sucesso -->
+      <div v-if="showSuccess" class="success-overlay">
+        <vue3-lottie :animation-data="checkSuccess" :loop="false" :autoplay="true" style="width:150px; height:150px;" />
+      </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref, onMounted } from "vue";
-import { getAllUsers, approveUser } from "../../api";
+import { getAllUsers, approveUser } from "../../api/user";
+import Vue3Lottie from "vue3-lottie";
+
+import checkSuccess from "@/assets/check/check-success.json";
 
 interface User {
   id: number;
@@ -100,7 +131,7 @@ interface User {
   email: string;
   role: string;
   approved: boolean;
-  createdAt: string;
+  createdAt?: string;
 }
 
 export default defineComponent({
@@ -112,36 +143,74 @@ export default defineComponent({
 
     const pendingUsers = ref<User[]>([]);
     const approvedUsers = ref<User[]>([]);
+    const showSuccess = ref(false);
+    const showUserModal = ref(false);
+    const selectedUser = ref<User | null>(null);
+
 
     const loadUsers = async () => {
-      try {
-        const usersData = await getAllUsers();
-        users.value = usersData;
-        pendingUsers.value = usersData.filter(user => !user.approved);
-        approvedUsers.value = usersData.filter(user => user.approved);
-      } catch (error) {
-        console.error('Erro ao carregar usuários:', error);
-      } finally {
-        loading.value = false;
-      }
-    };
+  try {
+    console.log('Carregando usuários...');
+    const usersData = await getAllUsers();
+    console.log('Usuários recebidos da API:', usersData);
+    
+    users.value = usersData;
+    pendingUsers.value = usersData.filter(user => !user.approved);
+    approvedUsers.value = usersData.filter(user => user.approved);
+    
+    console.log('Pending users:', pendingUsers.value.length);
+    console.log('Approved users:', approvedUsers.value.length);
+    
+  } catch (error) {
+    console.error('Erro detalhado ao carregar usuários:', error);
+  } finally {
+    loading.value = false;
+  }
+};
 
-    const approveUser = async (userId: number) => {
+    const handleApproveUser = async (userId: number) => {
+      console.log('=== INICIANDO APROVAÇÃO ===');
+      console.log('UserID:', userId);
+      console.log('Users antes:', users.value.map(u => ({ id: u.id, name: u.name, approved: u.approved })));
+
       try {
         approvingUserId.value = userId;
+
+        console.log('Chamando API approveUser...');
         await approveUser(userId);
-        await loadUsers(); // Recarregar lista
+        console.log('API chamada com sucesso');
+
+        console.log('Recarregando lista de usuários...');
+        await loadUsers();
+        console.log('Lista recarregada');
+        console.log('Users depois:', users.value.map(u => ({ id: u.id, name: u.name, approved: u.approved })));
+
+        showSuccess.value = true;
+        setTimeout(() => {
+          showSuccess.value = false;
+        }, 3500);
+
+        if (selectedUser.value?.id === userId) {
+          selectedUser.value.approved = true;
+          showUserModal.value = false;
+        }
+
       } catch (error) {
-        console.error('Erro ao aprovar usuário:', error);
-        alert('Erro ao aprovar usuário');
+        console.error("Erro completo:", error);
+        alert("Erro ao aprovar usuário");
       } finally {
         approvingUserId.value = null;
       }
     };
 
     const viewUserDetails = (user: User) => {
-      // Implementar modal de detalhes do usuário
-      console.log('Visualizar usuário:', user);
+      selectedUser.value = user;
+      showUserModal.value = true;
+    };
+
+    const closeUserModal = () => {
+      showUserModal.value = false;
+      selectedUser.value = null;
     };
 
     const formatDate = (dateString: string) => {
@@ -157,9 +226,15 @@ export default defineComponent({
       pendingUsers,
       approvedUsers,
       approvingUserId,
-      approveUser,
+      loading,
+      handleApproveUser,
       viewUserDetails,
-      formatDate
+      formatDate,
+      showSuccess,
+      checkSuccess,
+      selectedUser,
+      showUserModal,
+      closeUserModal
     };
   },
 });
@@ -300,7 +375,8 @@ export default defineComponent({
   gap: 10px;
 }
 
-.btn-approve, .btn-view {
+.btn-approve,
+.btn-view {
   padding: 8px 16px;
   border: none;
   border-radius: 5px;
@@ -335,7 +411,8 @@ table {
   border-collapse: collapse;
 }
 
-th, td {
+th,
+td {
   padding: 12px 15px;
   text-align: left;
   border-bottom: 1px solid var(--card-border);
@@ -387,5 +464,64 @@ th {
 .btn-success {
   background: #10b981;
   color: white;
+}
+
+.success-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 9999;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal {
+  background: var(--card-bg);
+  padding: 20px;
+  border-radius: 10px;
+  width: 400px;
+  max-width: 90%;
+  color: var(--color-text);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-close {
+  background: #ef4444;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--color-text-secondary);
+}
+
+.btn-approve:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>
