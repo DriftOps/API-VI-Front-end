@@ -1,19 +1,13 @@
 <template>
   <div class="login-page" :class="{ dark: darkMode }">
     <!-- Toggle de tema -->
-    <button class="theme-toggle" @click="toggleTheme">
-      <div class="icon" :class="{ dark: darkMode }">
-        <span class="sun">☀️</span>
-        <span class="moon">🌙</span>
-      </div>
+    <button @click="toggleTheme" class="theme-btn" :title="darkMode ? 'Modo Claro' : 'Modo Escuro'">
+      <SunIcon v-if="darkMode" :size="18" />
+      <MoonIcon v-else :size="18" />
     </button>
 
     <!-- Logo -->
-    <img
-      :src="darkMode ? '/NutriXBlack.gif' : '/NutriX.gif'"
-      alt="NutriX Logo"
-      class="logo"
-    />
+    <img :src="darkMode ? '/NutriXBlack.gif' : '/NutriX.gif'" alt="NutriX Logo" class="logo" />
 
     <h1 class="login-text">Login</h1>
 
@@ -44,6 +38,10 @@
 import { defineComponent, ref, watch, onMounted } from "vue";
 import { useUserStore } from "../stores/user";
 import { useRouter } from "vue-router";
+import {
+  Sun as SunIcon,
+  Moon as MoonIcon
+} from "lucide-vue-next";
 
 // Interface para a resposta da API
 interface LoginResponse {
@@ -54,9 +52,14 @@ interface LoginResponse {
   email: string;
   role: string;
   token: string;
+  approved?: boolean;
 }
 
 export default defineComponent({
+  components: {
+    SunIcon,
+    MoonIcon
+  },
   setup() {
     const userStore = useUserStore();
     const router = useRouter();
@@ -90,16 +93,58 @@ export default defineComponent({
           }),
         });
 
+        // Verifica se a resposta está vazia
+        const contentLength = response.headers.get('content-length');
+        const contentType = response.headers.get('content-type');
+
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || "Erro ao fazer login");
+          // Se for status 403 (Forbidden) - usuário não aprovado
+          if (response.status === 403) {
+            throw new Error("Seu cadastro ainda não foi aprovado. Aguarde a aprovação do administrador.");
+          }
+
+          // Tenta obter mensagem de erro do backend
+          let errorMsg = "Erro ao fazer login";
+          try {
+            if (contentLength !== '0' && contentType?.includes('application/json')) {
+              const errorData = await response.json();
+              errorMsg = errorData.message || errorMsg;
+            }
+          } catch {
+            // Se não conseguir parsear JSON, usa mensagem padrão baseada no status
+            if (response.status === 401) {
+              errorMsg = "Email ou senha incorretos";
+            } else if (response.status === 403) {
+              errorMsg = "Acesso negado. Usuário não aprovado.";
+            } else {
+              errorMsg = `Erro ${response.status}: ${response.statusText}`;
+            }
+          }
+          throw new Error(errorMsg);
         }
 
-        const userData: LoginResponse = await response.json();
+        // Processa resposta de sucesso
+        let userData: LoginResponse;
+
+        try {
+          if (contentLength === '0' || !contentType?.includes('application/json')) {
+            throw new Error("Resposta vazia do servidor");
+          }
+          userData = await response.json();
+        } catch (parseError) {
+          console.error("Erro ao parsear resposta:", parseError);
+          throw new Error("Resposta inválida do servidor");
+        }
+
+        // Verifica se o usuário está aprovado (se o campo exists)
+        if (userData.approved === false) {
+          throw new Error("Seu cadastro ainda não foi aprovado. Aguarde a aprovação do administrador.");
+        }
 
         // Adiciona propriedades faltantes com valores padrão
         const completeUser = {
           ...userData,
+          approved: userData.approved !== undefined ? userData.approved : true, // Assume true se não existir
           dietaryPreferences: userData.dietaryPreferences ?? [],
           restrictions: userData.restrictions ?? [],
         };
@@ -139,18 +184,18 @@ export default defineComponent({
     // Inicializa o usuário ao carregar o componente
     onMounted(() => {
       userStore.initUser();
-      
+
       // Se já estiver autenticado, redireciona para dashboard
       if (userStore.isAuthenticated) {
         router.push("/dashboard");
       }
     });
 
-    return { 
-      email, 
-      password, 
-      login, 
-      darkMode, 
+    return {
+      email,
+      password,
+      login,
+      darkMode,
       toggleTheme,
       loading,
       errorMessage
@@ -314,5 +359,20 @@ button:disabled {
 
 .theme-toggle .icon.dark .moon {
   display: block;
+}
+
+.theme-btn,
+.logout-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  padding: 8px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.theme-btn:hover,
+.logout-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 </style>

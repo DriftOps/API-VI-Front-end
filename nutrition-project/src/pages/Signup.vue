@@ -1,19 +1,13 @@
 <template>
   <div class="signup-page" :class="{ dark: darkMode }">
     <!-- Toggle de tema -->
-    <button class="theme-toggle" @click="toggleTheme">
-      <div class="icon" :class="{ dark: darkMode }">
-        <span class="sun">☀️</span>
-        <span class="moon">🌙</span>
-      </div>
+    <button @click="toggleTheme" class="theme-btn" :title="darkMode ? 'Modo Claro' : 'Modo Escuro'">
+      <SunIcon v-if="darkMode" :size="18" />
+      <MoonIcon v-else :size="18" />
     </button>
 
     <!-- Logo -->
-    <img
-      :src="darkMode ? '/NutriXBlack.gif' : '/NutriX.gif'"
-      alt="NutriX Logo"
-      class="logo"
-    />
+    <!-- <img :src="darkMode ? '/NutriXBlack.gif' : '/NutriX.gif'" alt="NutriX Logo" class="logo" /> -->
 
     <h1 class="signup-text">Criar Conta</h1>
 
@@ -34,24 +28,24 @@
       <!-- Dados básicos -->
       <div class="form-section">
         <h3>Dados Pessoais</h3>
-        
+
         <input v-model="formData.name" placeholder="Nome completo" type="text" required />
         <input v-model="formData.email" placeholder="Email" type="email" required />
         <input v-model="formData.password" type="password" placeholder="Senha" required />
         <input v-model="confirmPassword" type="password" placeholder="Confirmar senha" required />
-        
+
         <div class="input-group">
           <input v-model="formData.weight" type="number" placeholder="Peso (kg)" step="0.1" />
           <input v-model="formData.height" type="number" placeholder="Altura (cm)" />
         </div>
-        
+
         <input v-model="formData.birthDate" type="date" placeholder="Data de nascimento" />
       </div>
 
       <!-- Objetivos e preferências -->
       <div class="form-section">
         <h3>Objetivos e Preferências</h3>
-        
+
         <select v-model="formData.goal" class="select-field">
           <option value="">Selecione seu objetivo</option>
           <option value="LOSE_WEIGHT">Perder peso rápido</option>
@@ -75,11 +69,7 @@
         <div class="tags-section">
           <label>Preferências alimentares (opcional)</label>
           <div class="tags-input">
-            <input 
-              v-model="newPreference" 
-              placeholder="Adicionar preferência" 
-              @keyup.enter="addPreference"
-            />
+            <input v-model="newPreference" placeholder="Adicionar preferência" @keyup.enter="addPreference" />
             <button @click="addPreference" class="add-tag-btn">+</button>
           </div>
           <div class="tags-list">
@@ -93,11 +83,7 @@
         <div class="tags-section">
           <label>Restrições alimentares (opcional)</label>
           <div class="tags-input">
-            <input 
-              v-model="newRestriction" 
-              placeholder="Adicionar restrição" 
-              @keyup.enter="addRestriction"
-            />
+            <input v-model="newRestriction" placeholder="Adicionar restrição" @keyup.enter="addRestriction" />
             <button @click="addRestriction" class="add-tag-btn">+</button>
           </div>
           <div class="tags-list">
@@ -119,7 +105,7 @@
     <!-- Login -->
     <p class="login-text">
       Já tem uma conta?
-      <router-link to="/login" class="login-link">Faça login</router-link>
+      <router-link to="/" class="login-link">Faça login</router-link>
     </p>
   </div>
 </template>
@@ -127,6 +113,10 @@
 <script lang="ts">
 import { defineComponent, ref, computed, watch } from "vue";
 import { useRouter } from "vue-router";
+import {
+  Sun as SunIcon,
+  Moon as MoonIcon
+} from "lucide-vue-next";
 
 interface SignupResponse {
   id: number;
@@ -150,6 +140,10 @@ interface SignupForm {
 
 export default defineComponent({
   name: 'Signup',
+  components: {
+    SunIcon,
+    MoonIcon
+  },
   setup() {
     const router = useRouter();
 
@@ -183,10 +177,10 @@ export default defineComponent({
 
     // Computed para verificar se o formulário é válido
     const isFormValid = computed(() => {
-      return formData.value.name && 
-             formData.value.email && 
-             formData.value.password && 
-             passwordsMatch.value;
+      return formData.value.name &&
+        formData.value.email &&
+        formData.value.password &&
+        passwordsMatch.value;
     });
 
     const addPreference = () => {
@@ -247,9 +241,9 @@ export default defineComponent({
         }
 
         const userData: SignupResponse = await response.json();
-        
+
         successMessage.value = "Conta criada com sucesso! Aguarde a aprovação do administrador.";
-        
+
         // Redireciona para login após 3 segundos
         setTimeout(() => {
           router.push("/login");
@@ -284,7 +278,7 @@ export default defineComponent({
       applyTheme();
     }, { immediate: true });
 
-    return { 
+    return {
       formData,
       confirmPassword,
       newPreference,
@@ -352,7 +346,7 @@ export default defineComponent({
   background: white;
   padding: 25px;
   border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .signup-page.dark .form-section {
@@ -372,7 +366,8 @@ export default defineComponent({
   border-color: #8b5cf6;
 }
 
-input, .select-field {
+input,
+.select-field {
   width: 100%;
   padding: 12px;
   margin: 8px 0;
@@ -382,14 +377,15 @@ input, .select-field {
   box-sizing: border-box;
 }
 
-.signup-page.dark input, 
+.signup-page.dark input,
 .signup-page.dark .select-field {
   background: #1a1a1a;
   color: white;
   border-color: #444;
 }
 
-input:focus, .select-field:focus {
+input:focus,
+.select-field:focus {
   outline: none;
   border-color: #4f46e5;
 }
@@ -611,21 +607,36 @@ input:focus, .select-field:focus {
   display: block;
 }
 
+.theme-btn,
+.logout-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  padding: 8px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.theme-btn:hover,
+.logout-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 /* Responsividade */
 @media (max-width: 768px) {
   .form-container {
     grid-template-columns: 1fr;
     gap: 20px;
   }
-  
+
   .signup-page {
     padding: 15px;
   }
-  
+
   .logo {
     width: 200px;
   }
-  
+
   .signup-text {
     font-size: 28px;
   }
@@ -635,7 +646,7 @@ input:focus, .select-field:focus {
   .input-group {
     grid-template-columns: 1fr;
   }
-  
+
   .form-section {
     padding: 15px;
   }
