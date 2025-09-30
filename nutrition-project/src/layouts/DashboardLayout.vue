@@ -14,7 +14,7 @@
                     <ChevronRightIcon v-else :size="20" />
                 </button>
             </div>
-
+<div class="sidebar-scrollable">
             <nav class="sidebar-nav">
                 <router-link to="/dashboard" class="nav-item" active-class="active">
                     <BarChart3Icon :size="20" class="nav-icon" />
@@ -90,7 +90,7 @@
                 </div>
             </div>
         </div>
-
+</div>
         <!-- Conteúdo Principal -->
         <main class="main-content" :class="{ 'expanded': sidebarCollapsed }">
             <slot></slot>
@@ -236,6 +236,7 @@ export default defineComponent({
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-shrink: 0;
 }
 
 .sidebar-logo {
@@ -255,6 +256,13 @@ export default defineComponent({
 .sidebar-nav {
     flex: 1;
     padding: 20px 0;
+}
+
+.sidebar-footer {
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0; /* Impede que o footer encolha */
+    background: var(--sidebar-bg, #2c3e50); /* Garante que o background seja consistente */
 }
 
 .nav-item {
@@ -302,6 +310,29 @@ export default defineComponent({
 
 .admin-item {
     background: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-scrollable {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.sidebar-scrollable::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar-scrollable::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-scrollable::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+}
+
+.sidebar-scrollable::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
 }
 
 .badge {
