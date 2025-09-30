@@ -105,7 +105,7 @@
     <!-- Login -->
     <p class="login-text">
       Já tem uma conta?
-      <router-link to="/login" class="login-link">Faça login</router-link>
+      <router-link to="/" class="login-link">Faça login</router-link>
     </p>
   </div>
 </template>
