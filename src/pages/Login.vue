@@ -1,13 +1,16 @@
 <template>
+  
   <div class="login-page" :class="{ dark: darkMode }">
     <!-- Toggle de tema -->
+     
     <button @click="toggleTheme" class="theme-btn" :title="darkMode ? 'Modo Claro' : 'Modo Escuro'">
+      <ThemeToggle />
       <SunIcon v-if="darkMode" :size="18" />
       <MoonIcon v-else :size="18" />
     </button>
 
     <!-- Logo -->
-    <img :src="darkMode ? '/NutriXBlack.gif' : '/NutriX.gif'" alt="NutriX Logo" class="logo" />
+    <img :src="darkMode ? '/NutriXBlack.png' : '/NutriXWhite.png'" alt="NutriX Logo" class="logo" />
 
     <h1 class="login-text">Login</h1>
 
@@ -38,6 +41,7 @@
 import { defineComponent, ref, watch, onMounted } from "vue";
 import { useUserStore } from "../stores/user";
 import { useRouter } from "vue-router";
+import ThemeToggle from "@/components/ThemeToggle.vue";
 import {
   Sun as SunIcon,
   Moon as MoonIcon
@@ -206,7 +210,7 @@ export default defineComponent({
 
 <style scoped>
 .login-page {
-  width: 85vw; /* ocupar toda a largura da viewport */
+  width: 85vw;
   min-height: 120vh;
   display: flex;
   flex-direction: column;
@@ -311,68 +315,37 @@ button:disabled {
 
 /* Toggle */
 .theme-toggle {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  width: 60px;
-  height: 30px;
-  border-radius: 30px;
-  border: none;
-  background: #ddd;
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  position: relative;
-}
-
-.theme-toggle .icon {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: white;
-  position: absolute;
-  left: 4px;
-  top: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
-  font-size: 14px;
-}
-
-.theme-toggle .icon.dark {
-  left: 34px;
-}
-
-.theme-toggle .sun {
-  display: block;
-}
-
-.theme-toggle .moon {
-  display: none;
-}
-
-.theme-toggle .icon.dark .sun {
-  display: none;
-}
-
-.theme-toggle .icon.dark .moon {
-  display: block;
-}
-
-.theme-btn,
-.logout-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: white;
   padding: 8px;
-  border-radius: 5px;
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
+  transition: background 0.3s, color 0.3s;
 }
 
-.theme-btn:hover,
-.logout-btn:hover {
+/* Light mode */
+.theme-toggle {
+  background: #f3f3f3;
+  color: #333;
+}
+
+/* Dark mode */
+:deep(html.dark) .theme-toggle {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.theme-toggle:hover {
+  background: #e0e0e0;
+}
+
+:deep(html.dark) .theme-toggle:hover {
   background: rgba(255, 255, 255, 0.2);
+}
+
+.theme-btn {
+  margin-bottom: 5px;
 }
 </style>
