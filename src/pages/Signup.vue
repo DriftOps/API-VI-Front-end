@@ -302,7 +302,7 @@ export default defineComponent({
 
 <style scoped>
 .signup-page {
-  width: 100vw;
+  width: 85vw;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
