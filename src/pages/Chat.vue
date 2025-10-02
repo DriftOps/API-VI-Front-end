@@ -1,7 +1,7 @@
 <template>
   <DashboardLayout>
     <div class="chat-container">
-      <!-- Header do Chat -->
+      <!-- Header -->
       <div class="chat-header">
         <div class="chat-info">
           <div class="nutritionist-avatar">
@@ -27,9 +27,9 @@
         </div>
       </div>
 
-      <!-- Área de Mensagens -->
+      <!-- Mensagens -->
       <div class="chat-messages" ref="messagesContainer">
-        <!-- Mensagem de boas-vindas -->
+        <!-- Boas-vindas -->
         <div v-if="chatHistory.length === 0" class="welcome-message">
           <div class="welcome-avatar">
             <UserCheckIcon :size="32" />
@@ -38,23 +38,15 @@
             <h3>Olá! Sou sua nutricionista</h3>
             <p>Estou aqui para ajudar você com orientações personalizadas sobre alimentação, suplementação e hábitos saudáveis. Como posso ajudar você hoje?</p>
             <div class="quick-questions">
-              <button @click="sendQuickQuestion('Gostaria de uma orientação para perda de peso')" class="quick-btn">
-                Perda de peso
-              </button>
-              <button @click="sendQuickQuestion('Preciso de ajuda com ganho de massa muscular')" class="quick-btn">
-                Ganho de massa
-              </button>
-              <button @click="sendQuickQuestion('Tenho dúvidas sobre suplementação')" class="quick-btn">
-                Suplementação
-              </button>
-              <button @click="sendQuickQuestion('Preciso de um plano alimentar')" class="quick-btn">
-                Plano alimentar
-              </button>
+              <button @click="sendQuickQuestion('Gostaria de uma orientação para perda de peso')" class="quick-btn">Perda de peso</button>
+              <button @click="sendQuickQuestion('Preciso de ajuda com ganho de massa muscular')" class="quick-btn">Ganho de massa</button>
+              <button @click="sendQuickQuestion('Tenho dúvidas sobre suplementação')" class="quick-btn">Suplementação</button>
+              <button @click="sendQuickQuestion('Preciso de um plano alimentar')" class="quick-btn">Plano alimentar</button>
             </div>
           </div>
         </div>
 
-        <!-- Mensagens do chat -->
+        <!-- Histórico -->
         <div 
           v-for="message in chatHistory" 
           :key="message.id"
@@ -68,9 +60,9 @@
               <span class="message-sender">{{ message.from }}</span>
               <span class="message-time">{{ formatTime(message.timestamp) }}</span>
             </div>
-            <div class="message-content">
-              {{ message.message }}
-            </div>
+            <!-- Aqui entra o markdown -->
+            <div class="message-content" v-html="renderMarkdown(message.message)"></div>
+
             <div v-if="message.from !== user?.name" class="message-actions">
               <button @click="copyMessage(message.message)" class="msg-action" title="Copiar mensagem">
                 <CopyIcon :size="14" />
@@ -79,20 +71,18 @@
           </div>
         </div>
 
-        <!-- Typing indicator -->
+        <!-- Digitando -->
         <div v-if="isTyping" class="message other-message typing-indicator">
           <div class="message-avatar">N</div>
           <div class="message-content-wrapper">
             <div class="typing-dots">
-              <span></span>
-              <span></span>
-              <span></span>
+              <span></span><span></span><span></span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Input de Mensagem -->
+      <!-- Input -->
       <div class="chat-input-area">
         <div class="input-actions">
           <button @click="toggleEmojiPicker" class="action-btn" title="Emojis">
@@ -116,24 +106,14 @@
           <!-- Emoji Picker -->
           <div v-if="showEmojiPicker" class="emoji-picker">
             <div class="emoji-grid">
-              <button 
-                v-for="emoji in quickEmojis" 
-                :key="emoji"
-                @click="addEmoji(emoji)"
-                class="emoji-btn"
-              >
+              <button v-for="emoji in quickEmojis" :key="emoji" @click="addEmoji(emoji)" class="emoji-btn">
                 {{ emoji }}
               </button>
             </div>
           </div>
         </div>
 
-        <button 
-          @click="sendMessage" 
-          :disabled="loading || !newMessage.trim()" 
-          class="send-btn"
-          :class="{ 'has-message': newMessage.trim() }"
-        >
+        <button @click="sendMessage" :disabled="loading || !newMessage.trim()" class="send-btn" :class="{ 'has-message': newMessage.trim() }">
           <SendIcon v-if="!loading" :size="20" />
           <LoaderIcon v-else :size="20" class="loading-spinner" />
         </button>
@@ -146,8 +126,10 @@
 import { defineComponent, ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useUserStore } from '@/stores/user'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
+import { sendMessageToAI } from "@/api/chatApi"
+import MarkdownIt from "markdown-it"
 
-// Novos ícones
+// Ícones
 import {
   User as UserIcon,
   UserCheck as UserCheckIcon,
@@ -198,62 +180,57 @@ export default defineComponent({
     const user = computed(() => userStore.user)
     const chatHistory = computed(() => userStore.chatHistory)
 
+    // Markdown parser
+    const md = new MarkdownIt({
+      breaks: true,        // quebra de linha
+      linkify: true        // transformar links em <a>
+    })
+
+    const renderMarkdown = (text: string) => {
+      return md.render(text)
+    }
+
     // Emojis rápidos
     const quickEmojis = ['😊', '👍', '❤️', '🔥', '💪', '🥗', '🍎', '💧', '🏃‍♂️', '🎯']
 
     const sendMessage = async () => {
       if (!newMessage.value.trim() || !user.value) return
-
       loading.value = true
 
       try {
-        // Adiciona mensagem do usuário
         const userMessage: ChatMessage = {
           id: Date.now(),
           from: user.value.name,
           message: newMessage.value,
           timestamp: new Date()
         }
-        
         userStore.addChatMessage(userMessage)
         newMessage.value = ''
         showEmojiPicker.value = false
-
-        // Simula digitação do nutricionista
         isTyping.value = true
-        setTimeout(() => {
-          isTyping.value = false
-          
-          // Respostas automáticas baseadas no conteúdo
-          const userMessageLower = userMessage.message.toLowerCase()
-          let response = 'Obrigado pela sua mensagem! Em breve retornarei com orientações personalizadas.'
 
-          if (userMessageLower.includes('peso') || userMessageLower.includes('emagrec')) {
-            response = 'Entendi que você busca orientação para perda de peso. Vou preparar um plano personalizado considerando seu metabolismo e objetivos específicos. Poderia me informar sua altura e peso atual?'
-          } else if (userMessageLower.includes('massa') || userMessageLower.includes('muscul')) {
-            response = 'Excelente! Para ganho de massa muscular, é importante aliar treino adequado com superávit calórico de qualidade. Vamos trabalhar na distribuição de macros específica para seus objetivos.'
-          } else if (userMessageLower.includes('suplement')) {
-            response = 'A suplementação deve ser personalizada conforme suas necessidades. Poderia me contar sobre sua rotina de treinos e objetivos específicos?'
-          } else if (userMessageLower.includes('plano') || userMessageLower.includes('dieta')) {
-            response = 'Perfeito! Para criar seu plano alimentar personalizado, preciso saber sobre suas preferências alimentares, restrições e rotina diária. Tem alguma alergia ou intolerância?'
-          }
+        const resposta = await sendMessageToAI(userMessage.message)
 
-          const botMessage: ChatMessage = {
-            id: Date.now() + 1,
-            from: 'Nutricionista',
-            message: response,
-            timestamp: new Date()
-          }
-          userStore.addChatMessage(botMessage)
+        isTyping.value = false
 
-          // Tocar som de notificação
-          if (soundEnabled.value) {
-            playNotificationSound()
-          }
-        }, 2000)
+        const botMessage: ChatMessage = {
+          id: Date.now() + 1,
+          from: 'Nutricionista',
+          message: resposta,
+          timestamp: new Date()
+        }
+        userStore.addChatMessage(botMessage)
 
+        if (soundEnabled.value) playNotificationSound()
       } catch (error) {
         console.error('Erro ao enviar mensagem:', error)
+        const errorMessage: ChatMessage = {
+          id: Date.now() + 2,
+          from: 'Nutricionista',
+          message: "⚠️ Ocorreu um erro ao conectar com o servidor.",
+          timestamp: new Date()
+        }
+        userStore.addChatMessage(errorMessage)
       } finally {
         loading.value = false
       }
@@ -277,44 +254,24 @@ export default defineComponent({
       }
     }
 
-    const toggleSound = () => {
-      soundEnabled.value = !soundEnabled.value
-    }
-
-    const toggleEmojiPicker = () => {
-      showEmojiPicker.value = !showEmojiPicker.value
-    }
-
-    const addEmoji = (emoji: string) => {
-      newMessage.value += emoji
-      messageInput.value?.focus()
-    }
-
-    const attachFile = () => {
-      // Em uma implementação real, isso abriria um seletor de arquivos
-      alert('Funcionalidade de anexar arquivo será implementada em breve!')
-    }
-
-    const copyMessage = (text: string) => {
-      navigator.clipboard.writeText(text)
-      // Poderia adicionar um toast de confirmação aqui
-    }
+    const toggleSound = () => soundEnabled.value = !soundEnabled.value
+    const toggleEmojiPicker = () => showEmojiPicker.value = !showEmojiPicker.value
+    const addEmoji = (emoji: string) => { newMessage.value += emoji; messageInput.value?.focus() }
+    const attachFile = () => alert('Funcionalidade de anexar arquivo será implementada em breve!')
+    const copyMessage = (text: string) => navigator.clipboard.writeText(text)
 
     const playNotificationSound = () => {
-      // Simula um som de notificação
-      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+Dyvm0iBjiN1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+Dyvm0iBjiN1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+Dyvm0iBjiN1/LMeSw=')
+      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+Dyvm0iBjiN1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+Dyvm0iBjiN1/LMeSw=')
       audio.volume = 0.3
-      audio.play().catch(() => {}) // Ignora erros de autoplay
+      audio.play().catch(() => {})
     }
 
-    // Rola para a última mensagem
     const scrollToBottom = () => {
       if (messagesContainer.value) {
         messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
       }
     }
 
-    // Fecha o emoji picker ao clicar fora
     const handleClickOutside = (event: MouseEvent) => {
       if (showEmojiPicker.value && !(event.target as Element).closest('.emoji-picker')) {
         showEmojiPicker.value = false
@@ -324,38 +281,17 @@ export default defineComponent({
     onMounted(() => {
       scrollToBottom()
       document.addEventListener('click', handleClickOutside)
-      
-      // Simula status online/offline do nutricionista
       isNutritionistOnline.value = Math.random() > 0.3
     })
 
-    watch(chatHistory, () => {
-      nextTick(() => {
-        scrollToBottom()
-      })
-    })
+    watch(chatHistory, () => nextTick(() => scrollToBottom()))
 
     return {
-      user,
-      chatHistory,
-      newMessage,
-      loading,
-      isTyping,
-      soundEnabled,
-      showEmojiPicker,
-      isNutritionistOnline,
-      messagesContainer,
-      messageInput,
-      quickEmojis,
-      sendMessage,
-      sendQuickQuestion,
-      formatTime,
-      clearChat,
-      toggleSound,
-      toggleEmojiPicker,
-      addEmoji,
-      attachFile,
-      copyMessage
+      user, chatHistory, newMessage, loading, isTyping, soundEnabled,
+      showEmojiPicker, isNutritionistOnline, messagesContainer, messageInput,
+      quickEmojis, sendMessage, sendQuickQuestion, formatTime, clearChat,
+      toggleSound, toggleEmojiPicker, addEmoji, attachFile, copyMessage,
+      renderMarkdown
     }
   }
 })
