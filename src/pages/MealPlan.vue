@@ -123,7 +123,7 @@ export default defineComponent({
 
 <style scoped>
 .meal-plan-content {
-  width: 100%;
+  width: 69vw;
 }
 
 .content-header {

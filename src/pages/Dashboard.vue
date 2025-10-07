@@ -399,7 +399,7 @@ export default defineComponent({
 
 <style scoped>
 .dashboard-content {
-  width: 100%;
+  width: 69vw;
 }
 
 .content-header {

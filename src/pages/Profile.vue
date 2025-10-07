@@ -443,7 +443,7 @@ export default defineComponent({
 
 <style scoped>
 .profile-content {
-  width: 100%;
+  width: 69vw;
 }
 
 .content-header {

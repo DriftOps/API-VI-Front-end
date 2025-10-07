@@ -145,7 +145,7 @@ export default defineComponent({
 
 <style scoped>
 .education-content {
-  width: 100%;
+  width: 69vw;
 }
 
 .content-header {

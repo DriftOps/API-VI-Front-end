@@ -66,10 +66,17 @@
           <option value="VERY_ACTIVE">Muito Ativo</option>
         </select>
 
+        <!-- Preferências alimentares -->
         <div class="tags-section">
           <label>Preferências alimentares (opcional)</label>
           <div class="tags-input">
-            <input v-model="newPreference" placeholder="Adicionar preferência" @keyup.enter="addPreference" />
+            <select v-model="newPreference" class="select-field">
+              <option disabled value="">Selecione uma preferência</option>
+              <option value="Vegano">Vegano</option>
+              <option value="Vegetariano">Vegetariano</option>
+              <option value="Low Carb">Low Carb</option>
+              <option value="Sem Glúten">Sem Glúten</option>
+            </select>
             <button @click="addPreference" class="add-tag-btn">+</button>
           </div>
           <div class="tags-list">
@@ -80,10 +87,18 @@
           </div>
         </div>
 
+        <!-- Restrições alimentares -->
         <div class="tags-section">
           <label>Restrições alimentares (opcional)</label>
           <div class="tags-input">
-            <input v-model="newRestriction" placeholder="Adicionar restrição" @keyup.enter="addRestriction" />
+            <select v-model="newRestriction" class="select-field">
+              <option disabled value="">Selecione uma restrição</option>
+              <option value="Intolerância à Lactose">Intolerância à Lactose</option>
+              <option value="Intolerância à Glúten">Intolerância à Glúten</option>
+              <option value="Alergia a Amendoim">Alergia a Amendoim</option>
+              <option value="Diabetes">Diabetes</option>
+              <option value="Hipertensão">Hipertensão</option>
+            </select>
             <button @click="addRestriction" class="add-tag-btn">+</button>
           </div>
           <div class="tags-list">
@@ -246,7 +261,7 @@ export default defineComponent({
 
         // Redireciona para login após 3 segundos
         setTimeout(() => {
-          router.push("/");
+          router.push("/login");
         }, 3000);
 
       } catch (error: any) {
@@ -308,7 +323,7 @@ export default defineComponent({
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background-color: #f9f9f9;
+  background-color: #FFFFFF;
   padding: 20px;
   box-sizing: border-box;
 }
@@ -334,7 +349,7 @@ button:disabled {
 }
 
 .signup-page.dark {
-  background-color: #121212;
+  background-color: #181818;
   color: white;
 }
 
@@ -457,16 +472,16 @@ input:focus,
   gap: 8px;
 }
 
-.tag {
-  background: #e0e7ff;
-  color: #4f46e5;
-  padding: 6px 12px;
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 14px;
-}
+  .tag {
+    background: #e0e7ff;
+    color: #4f46e5;
+    padding: 6px 6px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+  }
 
 .signup-page.dark .tag {
   background: #3730a3;
@@ -477,7 +492,7 @@ input:focus,
   background: #ef4444;
   color: white;
   border: none;
-  border-radius: 50%;
+  margin-bottom: 10px;
   width: 18px;
   height: 18px;
   display: flex;
