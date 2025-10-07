@@ -320,6 +320,7 @@ export default defineComponent({
   color: white;
   border-bottom: 1px solid var(--card-border);
   width: 100%; 
+  border-radius: 10px;
 }
 
 .chat-info {

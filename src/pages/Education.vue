@@ -155,6 +155,7 @@ export default defineComponent({
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-radius: 10px;
 }
 
 .content-header h1 {
