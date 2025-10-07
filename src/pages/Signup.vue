@@ -246,7 +246,7 @@ export default defineComponent({
 
         // Redireciona para login após 3 segundos
         setTimeout(() => {
-          router.push("/login");
+          router.push("/");
         }, 3000);
 
       } catch (error: any) {
