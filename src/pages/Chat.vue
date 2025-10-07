@@ -60,9 +60,30 @@
               <span class="message-sender">{{ message.from }}</span>
               <span class="message-time">{{ formatTime(message.timestamp) }}</span>
             </div>
-            <!-- Aqui entra o markdown -->
             <div class="message-content" v-html="renderMarkdown(message.message)"></div>
+            <!-- Feedback -->
+            <div 
+              v-if="message.from === 'Nutricionista'" 
+              class="feedback-buttons"
+            >
+              <button 
+                class="feedback-btn" 
+                :class="{ active: message.feedback === 'positive' }"
+                @click="giveFeedback(message.id, 'positive')"
+                title="Resposta satisfatória"
+              >
+                <ThumbsUpIcon :size="16" />
+              </button>
 
+              <button 
+                class="feedback-btn" 
+                :class="{ active: message.feedback === 'negative' }"
+                @click="giveFeedback(message.id, 'negative')"
+                title="Resposta não satisfatória"
+              >
+                <ThumbsDownIcon :size="16" />
+              </button>
+            </div>
             <div v-if="message.from !== user?.name" class="message-actions">
               <button @click="copyMessage(message.message)" class="msg-action" title="Copiar mensagem">
                 <CopyIcon :size="14" />
@@ -140,7 +161,9 @@ import {
   BellOff as BellOffIcon,
   Smile as SmileIcon,
   Paperclip as PaperclipIcon,
-  Copy as CopyIcon
+  Copy as CopyIcon,
+  ThumbsUp as ThumbsUpIcon,
+  ThumbsDown as ThumbsDownIcon    
 } from 'lucide-vue-next'
 
 interface ChatMessage {
@@ -149,6 +172,7 @@ interface ChatMessage {
   message: string
   timestamp: Date
   type?: 'text' | 'system'
+  feedback?: 'positive' | 'negative' | null
 }
 
 export default defineComponent({
@@ -164,7 +188,9 @@ export default defineComponent({
     BellOffIcon,
     SmileIcon,
     PaperclipIcon,
-    CopyIcon
+    CopyIcon,
+    ThumbsUpIcon,
+    ThumbsDownIcon
   },
   setup() {
     const userStore = useUserStore()
@@ -253,6 +279,14 @@ export default defineComponent({
         userStore.clearChatHistory()
       }
     }
+
+    const giveFeedback = (messageId: number, type: 'positive' | 'negative') => {
+  const msg = userStore.chatHistory.find(m => m.id === messageId)
+  if (msg) {
+    msg.feedback = msg.feedback === type ? null : type // toggle
+    }
+  }
+
 
     const toggleSound = () => soundEnabled.value = !soundEnabled.value
     const toggleEmojiPicker = () => showEmojiPicker.value = !showEmojiPicker.value
@@ -744,5 +778,38 @@ export default defineComponent({
   .message {
     max-width: 98%;
   }
+
 }
+
+.feedback-buttons {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.feedback-btn {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  color: var(--color-text-secondary);
+  border-radius: 8px;
+  padding: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.feedback-btn:hover {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.feedback-btn.active {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
 </style>
