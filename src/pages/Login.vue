@@ -216,12 +216,12 @@ export default defineComponent({
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background-color: #f9f9f9;
+  background-color: white;
   text-align: center;
 }
 
 .login-page.dark {
-  background-color: #121212;
+  background-color:#181818;
   color: white;
 }
 
@@ -243,7 +243,7 @@ input:hover {
 }
 
 .login-page.dark input {
-  background: #2a2a2a;
+  background: #181818;
   color: white;
   border: 3px solid #444;
 }

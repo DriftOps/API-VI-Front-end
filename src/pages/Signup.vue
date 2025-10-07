@@ -246,7 +246,7 @@ export default defineComponent({
 
         // Redireciona para login após 3 segundos
         setTimeout(() => {
-          router.push("/login");
+          router.push("/");
         }, 3000);
 
       } catch (error: any) {
@@ -302,7 +302,7 @@ export default defineComponent({
 
 <style scoped>
 .signup-page {
-  width: 100vw;
+  width: 85vw;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
