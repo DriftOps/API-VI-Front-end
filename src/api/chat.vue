@@ -23,7 +23,7 @@
 
 <script setup>
 import { ref, onUpdated } from 'vue'
-import { sendMessageToAI } from '../api/chatApi.ts'
+import { sendMessageToAI } from './chatApi.ts'
 
 const chatHistory = ref([])
 const newMessage = ref('')

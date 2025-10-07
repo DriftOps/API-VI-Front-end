@@ -313,6 +313,26 @@ export default defineComponent({
   box-sizing: border-box;
 }
 
+button {
+  margin-top: 15px;
+  padding: 10px 20px;
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+button:hover:not(:disabled) {
+  background-color: #4338ca;
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
 .signup-page.dark {
   background-color: #121212;
   color: white;
@@ -555,71 +575,40 @@ input:focus,
   font-size: 16px;
 }
 
-/* Toggle de tema */
+/* Toggle */
 .theme-toggle {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  width: 60px;
-  height: 30px;
-  border-radius: 30px;
-  border: none;
-  background: #ddd;
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  position: relative;
-}
-
-.theme-toggle .icon {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: white;
-  position: absolute;
-  left: 4px;
-  top: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
-  font-size: 14px;
-}
-
-.theme-toggle .icon.dark {
-  left: 34px;
-}
-
-.theme-toggle .sun {
-  display: block;
-}
-
-.theme-toggle .moon {
-  display: none;
-}
-
-.theme-toggle .icon.dark .sun {
-  display: none;
-}
-
-.theme-toggle .icon.dark .moon {
-  display: block;
-}
-
-.theme-btn,
-.logout-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: white;
   padding: 8px;
-  border-radius: 5px;
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
+  transition: background 0.3s, color 0.3s;
 }
 
-.theme-btn:hover,
-.logout-btn:hover {
+/* Light mode */
+.theme-toggle {
+  background: #f3f3f3;
+  color: #333;
+}
+
+/* Dark mode */
+:deep(html.dark) .theme-toggle {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.theme-toggle:hover {
+  background: #e0e0e0;
+}
+
+:deep(html.dark) .theme-toggle:hover {
   background: rgba(255, 255, 255, 0.2);
+}
+
+.theme-btn {
+  margin-bottom: 5px;
 }
 
 /* Responsividade */
