@@ -302,7 +302,7 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   height: calc(100vh - 10px);
-  width: 210%;
+  width: 69vw;
   /* max-width: 100%; */
   margin: 0;
   background: var(--card-bg);
@@ -320,6 +320,7 @@ export default defineComponent({
   color: white;
   border-bottom: 1px solid var(--card-border);
   width: 100%; 
+  border-radius: 10px;
 }
 
 .chat-info {

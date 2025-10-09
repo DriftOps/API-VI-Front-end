@@ -123,7 +123,7 @@ export default defineComponent({
 
 <style scoped>
 .meal-plan-content {
-  width: 100%;
+  width: 69vw;
 }
 
 .content-header {
@@ -133,6 +133,7 @@ export default defineComponent({
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-radius: 10px;
 }
 
 .content-header h1 {

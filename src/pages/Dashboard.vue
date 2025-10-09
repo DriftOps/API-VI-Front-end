@@ -97,7 +97,7 @@
             </small>
           </div>
 
-          <!-- Preferências Alimentares -->
+          <!-- ✅ Preferências Alimentares (agora com select) -->
           <div class="card preferences">
             <label class="card-label">
               <AppleIcon :size="16" class="label-icon" />
@@ -112,14 +112,25 @@
               </span>
             </div>
             <div class="add-input">
-              <input v-model="newPreference" placeholder="Nova preferência" @keyup.enter="addPreference" />
+              <select v-model="newPreference">
+                <option disabled value="">Selecione uma preferência</option>
+                <option value="Vegetariano">Vegetariano</option>
+                <option value="Vegano">Vegano</option>
+                <option value="Pescetariano">Pescetariano</option>
+                <option value="Flexitariano">Flexitariano</option>
+                <option value="Low Carb">Low Carb</option>
+                <option value="Keto (Cetogênica)">Keto (Cetogênica)</option>
+                <option value="Paleo">Paleo</option>
+                <option value="Dieta Mediterrânea">Dieta Mediterrânea</option>
+                <option value="Dieta Balanceada">Dieta Balanceada</option>
+              </select>
               <button @click="addPreference" class="add-btn-small">
                 <PlusIcon :size="16" />
               </button>
             </div>
           </div>
 
-          <!-- Restrições Alimentares -->
+          <!-- ✅ Restrições Alimentares (agora com select) -->
           <div class="card preferences">
             <label class="card-label">
               <BanIcon :size="16" class="label-icon" />
@@ -134,7 +145,18 @@
               </span>
             </div>
             <div class="add-input">
-              <input v-model="newRestriction" placeholder="Nova restrição" @keyup.enter="addRestriction" />
+              <select v-model="newRestriction">
+                <option disabled value="">Selecione uma restrição</option>
+                <option value="Sem lactose">Sem lactose</option>
+                <option value="Sem glúten">Sem glúten</option>
+                <option value="Sem açúcar">Sem açúcar</option>
+                <option value="Sem soja">Sem soja</option>
+                <option value="Sem frutos do mar">Sem frutos do mar</option>
+                <option value="Sem oleaginosas">Sem oleaginosas</option>
+                <option value="Sem ovo">Sem ovo</option>
+                <option value="Sem carne vermelha">Sem carne vermelha</option>
+                <option value="Sem cafeína">Sem cafeína</option>
+              </select>
               <button @click="addRestriction" class="add-btn-small">
                 <PlusIcon :size="16" />
               </button>
@@ -174,8 +196,6 @@ import { useUserStore } from "../stores/user";
 import { fetchCurrentUser, updateUser } from "../api/user";
 import type { User as UserType, UserUpdateDTO } from "../types/user";
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
-
-// ✅ Importar apenas os ícones que você usa no dashboard
 import {
   BarChart3 as BarChart3Icon,
   Target as TargetIcon,
@@ -217,11 +237,9 @@ export default defineComponent({
   setup() {
     const route = useRoute();
     const userStore = useUserStore();
-
     const loading = ref(true);
     const saving = ref(false);
     const error = ref("");
-
     const newPreference = ref("");
     const newRestriction = ref("");
 
@@ -245,16 +263,12 @@ export default defineComponent({
       '/admin/users': 'Gerenciar Usuários'
     };
 
-    const currentPageTitle = computed(() => {
-      return pageTitles[route.path] || 'Dashboard';
-    });
+    const currentPageTitle = computed(() => pageTitles[route.path] || 'Dashboard');
 
-    // Carregar dados
     const loadData = async () => {
       try {
         loading.value = true;
         const userResponse = await fetchCurrentUser();
-
         const token = localStorage.getItem('token');
         const userWithToken: UserType = {
           ...userResponse,
@@ -263,9 +277,7 @@ export default defineComponent({
             ? userResponse.plan
             : (userResponse.plan ? JSON.stringify(userResponse.plan) : '')
         };
-
         userStore.setUser(userWithToken);
-
         userData.value = {
           goal: userResponse.goal || "",
           weight: userResponse.weight || undefined,
@@ -276,7 +288,6 @@ export default defineComponent({
           restrictions: userResponse.restrictions || [],
           plan: String(userResponse.plan || "")
         };
-
       } catch (err) {
         error.value = "Erro ao carregar dados do usuário";
         console.error(err);
@@ -285,78 +296,55 @@ export default defineComponent({
       }
     };
 
-    // Métodos calculados
     const calculateAge = computed(() => {
       if (!userData.value.birthDate) return 0;
       const birthDate = new Date(userData.value.birthDate);
       const today = new Date();
       let age = today.getFullYear() - birthDate.getFullYear();
       const monthDiff = today.getMonth() - birthDate.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-        age--;
-      }
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
       return age;
     });
 
     const imc = computed(() => {
       if (!userData.value.weight || !userData.value.height) return "—";
-      const heightInMeters = userData.value.height / 100;
-      return (userData.value.weight / (heightInMeters * heightInMeters)).toFixed(1);
+      const h = userData.value.height / 100;
+      return (userData.value.weight / (h * h)).toFixed(1);
     });
 
     const imcCategory = computed(() => {
-      const value = parseFloat(imc.value);
-      if (isNaN(value)) return "—";
-      if (value < 18.5) return "Abaixo do peso";
-      if (value < 24.9) return "Peso normal";
-      if (value < 29.9) return "Sobrepeso";
+      const v = parseFloat(imc.value);
+      if (isNaN(v)) return "—";
+      if (v < 18.5) return "Abaixo do peso";
+      if (v < 24.9) return "Peso normal";
+      if (v < 29.9) return "Sobrepeso";
       return "Obesidade";
     });
 
     const addPreference = () => {
-      if (newPreference.value.trim()) {
-        if (!userData.value.dietaryPreferences) {
-          userData.value.dietaryPreferences = [];
-        }
-        userData.value.dietaryPreferences.push(newPreference.value.trim());
+      if (newPreference.value && !userData.value.dietaryPreferences.includes(newPreference.value)) {
+        userData.value.dietaryPreferences.push(newPreference.value);
         newPreference.value = "";
       }
     };
 
-    const removePreference = (index: number) => {
-      if (userData.value.dietaryPreferences) {
-        userData.value.dietaryPreferences.splice(index, 1);
-      }
-    };
+    const removePreference = (i: number) => userData.value.dietaryPreferences.splice(i, 1);
 
     const addRestriction = () => {
-      if (newRestriction.value.trim()) {
-        if (!userData.value.restrictions) {
-          userData.value.restrictions = [];
-        }
-        userData.value.restrictions.push(newRestriction.value.trim());
+      if (newRestriction.value && !userData.value.restrictions.includes(newRestriction.value)) {
+        userData.value.restrictions.push(newRestriction.value);
         newRestriction.value = "";
       }
     };
 
-    const removeRestriction = (index: number) => {
-      if (userData.value.restrictions) {
-        userData.value.restrictions.splice(index, 1);
-      }
-    };
+    const removeRestriction = (i: number) => userData.value.restrictions.splice(i, 1);
 
     const saveUser = async () => {
       try {
         saving.value = true;
         const updatedUser = await updateUser(userData.value);
-
         const token = localStorage.getItem('token');
-        const userWithToken: UserType = {
-          ...updatedUser,
-          token: token || ''
-        };
-
-        userStore.setUser(userWithToken);
+        userStore.setUser({ ...updatedUser, token: token || '' });
         error.value = "";
       } catch (err) {
         error.value = "Erro ao salvar dados";
@@ -366,13 +354,9 @@ export default defineComponent({
       }
     };
 
-    const resetForm = () => {
-      loadData();
-    };
+    const resetForm = () => loadData();
 
-    onMounted(() => {
-      loadData();
-    });
+    onMounted(loadData);
 
     return {
       user,
@@ -399,7 +383,7 @@ export default defineComponent({
 
 <style scoped>
 .dashboard-content {
-  width: 100%;
+  width: 69vw;
 }
 
 .content-header {
@@ -409,6 +393,7 @@ export default defineComponent({
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-radius: 10px;
 }
 
 .content-header h1 {
