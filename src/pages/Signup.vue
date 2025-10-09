@@ -6,33 +6,37 @@
       <MoonIcon v-else :size="18" />
     </button>
 
-    <!-- Logo -->
-    <!-- <img :src="darkMode ? '/NutriXBlack.gif' : '/NutriX.gif'" alt="NutriX Logo" class="logo" /> -->
-
-    <h1 class="signup-text">Criar Conta</h1>
-
-    <!-- Mensagem de erro -->
-    <div v-if="errorMessage" class="error-message">
-      {{ errorMessage }}
+    <!-- Barra de progresso -->
+    <div class="progress-bar-container">
+      <div class="progress-bar" :style="{ width: currentStep === 1 ? '50%' : '100%' }"></div>
     </div>
 
-    <!-- Mensagem de sucesso -->
-    <div v-if="successMessage" class="success-message">
-      {{ successMessage }}
-    </div>
+    <h1 class="signup-text">
+      {{ currentStep === 1 ? 'Criar Conta' : 'Anamnese' }}
+    </h1>
 
-    <!-- Loading -->
+    <!-- Mensagens -->
+    <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+    <div v-if="successMessage" class="success-message">{{ successMessage }}</div>
     <div v-if="loading" class="loading">Criando conta...</div>
 
     <div class="form-container">
-      <!-- Dados básicos -->
-      <div class="form-section">
+      <!-- Etapa 1: Dados da conta -->
+      <div v-if="currentStep === 1" class="form-section">
         <h3>Dados Pessoais</h3>
-
         <input v-model="formData.name" placeholder="Nome completo" type="text" required />
         <input v-model="formData.email" placeholder="Email" type="email" required />
         <input v-model="formData.password" type="password" placeholder="Senha" required />
         <input v-model="confirmPassword" type="password" placeholder="Confirmar senha" required />
+        <button @click="nextStep" :disabled="!passwordsMatch || !formData.name || !formData.email" class="signup-btn">
+          Próximo
+        </button>
+        <p v-if="!passwordsMatch" class="password-error">As senhas não coincidem</p>
+      </div>
+
+      <!-- Etapa 2: Anamnese -->
+      <div v-if="currentStep === 2" class="form-section">
+        <h3>Dados de Anamnese</h3>
 
         <div class="input-group">
           <input v-model="formData.weight" type="number" placeholder="Peso (kg)" step="0.1" />
@@ -40,11 +44,6 @@
         </div>
 
         <input v-model="formData.birthDate" type="date" placeholder="Data de nascimento" />
-      </div>
-
-      <!-- Objetivos e preferências -->
-      <div class="form-section">
-        <h3>Objetivos e Preferências</h3>
 
         <select v-model="formData.goal" class="select-field">
           <option value="">Selecione seu objetivo</option>
@@ -108,14 +107,16 @@
             </span>
           </div>
         </div>
+
+        <!-- Botões de navegação -->
+        <div class="button-group">
+          <button @click="prevStep" class="signup-btn secondary-btn">Voltar</button>
+          <button @click="signup" :disabled="loading" class="signup-btn">
+            {{ loading ? 'Criando conta...' : 'Concluir Cadastro' }}
+          </button>
+        </div>
       </div>
     </div>
-
-    <button @click="signup" :disabled="loading || !passwordsMatch" class="signup-btn">
-      {{ loading ? 'Criando conta...' : 'Criar Conta' }}
-    </button>
-
-    <p v-if="!passwordsMatch" class="password-error">As senhas não coincidem</p>
 
     <!-- Login -->
     <p class="login-text">
@@ -128,10 +129,7 @@
 <script lang="ts">
 import { defineComponent, ref, computed, watch } from "vue";
 import { useRouter } from "vue-router";
-import {
-  Sun as SunIcon,
-  Moon as MoonIcon
-} from "lucide-vue-next";
+import { Sun as SunIcon, Moon as MoonIcon } from "lucide-vue-next";
 
 interface SignupResponse {
   id: number;
@@ -154,100 +152,90 @@ interface SignupForm {
 }
 
 export default defineComponent({
-  name: 'Signup',
-  components: {
-    SunIcon,
-    MoonIcon
-  },
+  name: "Signup",
+  components: { SunIcon, MoonIcon },
   setup() {
     const router = useRouter();
+    const currentStep = ref(1);
 
     const formData = ref<SignupForm>({
-      name: '',
-      email: '',
-      password: '',
-      goal: '',
+      name: "",
+      email: "",
+      password: "",
+      goal: "",
       weight: undefined,
       height: undefined,
-      birthDate: '',
-      activityLevel: '',
+      birthDate: "",
+      activityLevel: "",
       dietaryPreferences: [],
-      restrictions: []
+      restrictions: [],
     });
 
-    const confirmPassword = ref('');
-    const newPreference = ref('');
-    const newRestriction = ref('');
+    const confirmPassword = ref("");
+    const newPreference = ref("");
+    const newRestriction = ref("");
     const loading = ref(false);
-    const errorMessage = ref('');
-    const successMessage = ref('');
+    const errorMessage = ref("");
+    const successMessage = ref("");
     const darkMode = ref(localStorage.getItem("theme") === "dark");
 
     const API_URL = "http://localhost:8080/api";
 
-    // Computed para verificar se as senhas coincidem
-    const passwordsMatch = computed(() => {
-      return formData.value.password === confirmPassword.value && formData.value.password.length > 0;
-    });
-
-    // Computed para verificar se o formulário é válido
-    const isFormValid = computed(() => {
-      return formData.value.name &&
-        formData.value.email &&
-        formData.value.password &&
-        passwordsMatch.value;
-    });
+    const passwordsMatch = computed(
+      () =>
+        formData.value.password === confirmPassword.value &&
+        formData.value.password.length > 0
+    );
 
     const addPreference = () => {
-      if (newPreference.value.trim() && !formData.value.dietaryPreferences.includes(newPreference.value.trim())) {
+      if (
+        newPreference.value.trim() &&
+        !formData.value.dietaryPreferences.includes(newPreference.value.trim())
+      ) {
         formData.value.dietaryPreferences.push(newPreference.value.trim());
-        newPreference.value = '';
+        newPreference.value = "";
       }
     };
 
-    const removePreference = (index: number) => {
+    const removePreference = (index: number) =>
       formData.value.dietaryPreferences.splice(index, 1);
-    };
 
     const addRestriction = () => {
-      if (newRestriction.value.trim() && !formData.value.restrictions.includes(newRestriction.value.trim())) {
+      if (
+        newRestriction.value.trim() &&
+        !formData.value.restrictions.includes(newRestriction.value.trim())
+      ) {
         formData.value.restrictions.push(newRestriction.value.trim());
-        newRestriction.value = '';
+        newRestriction.value = "";
       }
     };
 
-    const removeRestriction = (index: number) => {
+    const removeRestriction = (index: number) =>
       formData.value.restrictions.splice(index, 1);
+
+    const nextStep = () => {
+      if (!formData.value.name || !formData.value.email || !passwordsMatch.value) {
+        errorMessage.value = "Preencha todos os campos corretamente antes de prosseguir.";
+        return;
+      }
+      errorMessage.value = "";
+      currentStep.value = 2;
+    };
+
+    const prevStep = () => {
+      currentStep.value = 1;
     };
 
     const signup = async () => {
-      if (!isFormValid.value) {
-        errorMessage.value = "Por favor, preencha todos os campos obrigatórios";
-        return;
-      }
-
       loading.value = true;
-      errorMessage.value = '';
-      successMessage.value = '';
+      errorMessage.value = "";
+      successMessage.value = "";
 
       try {
         const response = await fetch(`${API_URL}/users/signup`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: formData.value.name,
-            email: formData.value.email,
-            password: formData.value.password,
-            goal: formData.value.goal || null,
-            weight: formData.value.weight || null,
-            height: formData.value.height || null,
-            birthDate: formData.value.birthDate || null,
-            activityLevel: formData.value.activityLevel || null,
-            dietaryPreferences: formData.value.dietaryPreferences,
-            restrictions: formData.value.restrictions
-          }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData.value),
         });
 
         if (!response.ok) {
@@ -256,17 +244,12 @@ export default defineComponent({
         }
 
         const userData: SignupResponse = await response.json();
-
         successMessage.value = "Conta criada com sucesso! Aguarde a aprovação do administrador.";
 
-        // Redireciona para login após 3 segundos
-        setTimeout(() => {
-          router.push("/login");
-        }, 3000);
-
+        setTimeout(() => router.push("/login"), 3000);
       } catch (error: any) {
         console.error("Erro no signup:", error);
-        errorMessage.value = error.message || "Erro ao criar conta. Tente novamente.";
+        errorMessage.value = error.message || "Erro ao criar conta.";
       } finally {
         loading.value = false;
       }
@@ -289,9 +272,7 @@ export default defineComponent({
       }
     };
 
-    watch(darkMode, (val) => {
-      applyTheme();
-    }, { immediate: true });
+    watch(darkMode, applyTheme, { immediate: true });
 
     return {
       formData,
@@ -303,19 +284,56 @@ export default defineComponent({
       successMessage,
       darkMode,
       passwordsMatch,
-      isFormValid,
+      currentStep,
+      nextStep,
+      prevStep,
+      signup,
       addPreference,
       removePreference,
       addRestriction,
       removeRestriction,
-      signup,
-      toggleTheme
+      toggleTheme,
     };
   },
 });
 </script>
 
 <style scoped>
+/* Mantém TODO o estilo original */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+/* Barra de progresso */
+.progress-bar-container {
+  width: 80%;
+  height: 10px;
+  background: #e5e7eb;
+  border-radius: 10px;
+  margin-bottom: 25px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: #4f46e5;
+  transition: width 0.4s ease;
+  border-radius: 10px;
+}
+
+/* Botões */
+.button-group {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.secondary-btn {
+  background-color: #6b7280;
+}
+
+.secondary-btn:hover {
+  background-color: #4b5563;
+}
+
 .signup-page {
   width: 85vw;
   min-height: 100vh;
@@ -373,12 +391,13 @@ button:disabled {
   grid-template-columns: 1fr 1fr;
   gap: 40px;
   max-width: 900px;
-  width: 100%;
+  width: 100vw;
   margin-bottom: 30px;
 }
 
 .form-section {
   background: white;
+  width: 70vw;
   padding: 25px;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
