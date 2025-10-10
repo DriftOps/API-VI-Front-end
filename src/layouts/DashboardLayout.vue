@@ -26,6 +26,11 @@
                     <span class="nav-text">Chat</span>
                 </router-link>
 
+                <router-link to="/meal" class="nav-item" active-class="active">
+                    <CookingPot :size="20" class="nav-icon" />
+                    <span class="nav-text">Refeições</span>
+                </router-link>
+
                 <router-link to="/meal-plan" class="nav-item" active-class="active">
                     <UtensilsIcon :size="20" class="nav-icon" />
                     <span class="nav-text">Plano Alimentar</span>
@@ -117,7 +122,8 @@ import {
     Target as TargetIcon,
     ChefHat as ChefHatIcon,
     GraduationCap as GraduationCapIcon,
-    PieChart as PieChartIcon
+    PieChart as PieChartIcon,
+    CookingPot
 } from 'lucide-vue-next';
 
 export default defineComponent({
@@ -136,7 +142,8 @@ export default defineComponent({
         TargetIcon,
         ChefHatIcon,
         GraduationCapIcon,
-        PieChartIcon
+        PieChartIcon,
+        CookingPot
     },
     setup() {
         const router = useRouter();
