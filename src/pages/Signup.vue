@@ -578,6 +578,13 @@ button:disabled {
   color: white;
 }
 
+.intro-text{
+margin-top: 18px;
+margin-bottom: 18px;
+border-bottom: 2px solid #4f46e5;
+padding-bottom: 10px;
+}
+
 .logo {
   width: 250px;
   margin-bottom: 20px;
@@ -623,8 +630,8 @@ button:disabled {
 }
 
 .signup-page.dark .form-section h3 {
-  color: #8b5cf6;
-  border-color: #8b5cf6;
+  color: #4f46e5;
+  border-color: #4f46e5;
 }
 
 .input-group {
