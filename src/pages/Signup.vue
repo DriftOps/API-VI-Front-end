@@ -1,250 +1,229 @@
 <template>
   <div class="signup-page" :class="{ dark: darkMode }">
-    <!-- Toggle de tema -->
-    <button @click="toggleTheme" class="theme-btn" :title="darkMode ? 'Modo Claro' : 'Modo Escuro'">
-      <SunIcon v-if="darkMode" :size="18" />
-      <MoonIcon v-else :size="18" />
-    </button>
+        <button @click="toggleTheme" class="theme-btn" :title="darkMode ? 'Modo Claro' : 'Modo Escuro'">
+      <SunIcon v-if="darkMode" :size="18" />
+      <MoonIcon v-else :size="18" />
+    </button>
 
-    <!-- Barra de progresso -->
-    <div class="progress-bar-container">
-      <div class="progress-bar" :style="{ width: currentStep === 1 ? '50%' : '100%' }"></div>
-    </div>
+        <div class="progress-bar-container">
+      <div class="progress-bar" :style="{ width: currentStep === 1 ? '50%' : '100%' }"></div>
+    </div>
 
-    <h1 class="signup-text">
-      {{ currentStep === 1 ? 'Criar Conta' : 'Anamnese' }}
-    </h1>
+    <h1 class="signup-text">
+      {{ currentStep === 1 ? 'Criar Conta' : 'Anamnese' }}
+    </h1>
 
-    <!-- Mensagens -->
-    <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
-    <div v-if="successMessage" class="success-message">{{ successMessage }}</div>
-    <div v-if="loading" class="loading">Criando conta...</div>
+        <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+    <div v-if="successMessage" class="success-message">{{ successMessage }}</div>
+    <div v-if="loading" class="loading">Criando conta...</div>
 
-    <form class="form-container" @submit.prevent="handleSubmit">
-      <!-- Etapa 1: Dados da conta -->
-      <div v-if="currentStep === 1" class="form-section">
-        <h3>Dados da Conta</h3>
-        <input v-model="formData.name" placeholder="Nome completo" type="text" required />
-        <input v-model="formData.email" placeholder="Email" type="email" required />
-        <input v-model="formData.password" type="password" placeholder="Senha" required />
-        <input v-model="confirmPassword" type="password" placeholder="Confirmar senha" required />
+    <form class="form-container" @submit.prevent="handleSubmit">
+            <div v-if="currentStep === 1" class="form-section">
+        <h3>Dados da Conta</h3>
+        <input v-model="formData.name" placeholder="Nome completo" type="text" required />
+        <input v-model="formData.email" placeholder="Email" type="email" required />
+        <input v-model="formData.password" type="password" placeholder="Senha" required />
+        <input v-model="confirmPassword" type="password" placeholder="Confirmar senha" required />
 
-        <div class="input-group">
-          <input v-model.number="formData.weight" type="number" placeholder="Peso (kg)" step="0.1" />
-          <input v-model.number="formData.height" type="number" placeholder="Altura (cm)" />
-        </div>
+        <div class="input-group">
+          <input v-model.number="formData.weight" type="number" placeholder="Peso (kg)" step="0.1" />
+          <input v-model.number="formData.height" type="number" placeholder="Altura (cm)" />
+        </div>
 
-        <input v-model="formData.birthDate" type="date" placeholder="Data de nascimento" />
+        <input v-model="formData.birthDate" type="date" placeholder="Data de nascimento" />
 
-        <div class="button-group-single">
-          <button type="button" @click="nextStep" :disabled="!canGoNextStep1" class="signup-btn">
-            Próximo
-          </button>
-        </div>
+        <div class="button-group-single">
+          <button type="button" @click="nextStep" :disabled="!canGoNextStep1" class="signup-btn">
+            Próximo
+          </button>
+        </div>
 
-        <p v-if="!passwordsMatch" class="password-error">As senhas não coincidem</p>
-      </div>
+        <p v-if="!passwordsMatch" class="password-error">As senhas não coincidem</p>
+      </div>
 
-      <!-- Etapa 2: Anamnese completa -->
-      <div v-if="currentStep === 2" class="form-section anamnese-section">
-        <!-- Seção: Dados pessoais ampliados -->
-        <h3>Idade, Data de Nascimento, Sexo, Profissão</h3>
-        <div class="input-group">
-          <input v-model.number="formData.age" type="number" placeholder="Idade" />
-          <input v-model="formData.profession" placeholder="Profissão" type="text" />
-        </div>
+            <div v-if="currentStep === 2" class="form-section anamnese-section">
+                <h3>Idade, Data de Nascimento, Sexo, Profissão</h3>
+        <div class="input-group">
+          <input v-model.number="formData.age" type="number" placeholder="Idade" />
+        </div>
 
-        <div class="row">
-          <label class="section-label">Sexo</label>
-          <div class="radio-group">
-            <label><input type="radio" value="Feminino" v-model="formData.sex" /> Feminino</label>
-            <label><input type="radio" value="Masculino" v-model="formData.sex" /> Masculino</label>
-            <label><input type="radio" value="Outro" v-model="formData.sex" /> Outro</label>
-            <label><input type="radio" value="Prefiro não dizer" v-model="formData.sex" /> Prefiro não dizer</label>
-          </div>
-        </div>
+        <div class="row">
+          <label class="section-label">Sexo</label>
+          <div class="radio-group">
+            <label><input type="radio" value="Feminino" v-model="formData.sex" /> Feminino</label>
+            <label><input type="radio" value="Masculino" v-model="formData.sex" /> Masculino</label>
+            <label><input type="radio" value="Outro" v-model="formData.sex" /> Outro</label>
+            <label><input type="radio" value="Prefiro não dizer" v-model="formData.sex" /> Prefiro não dizer</label>
+          </div>
+        </div>
 
 
-        <!-- Texto introdutório -->
-        <p class="intro-text">Aqui vamos conhecer um pouco mais sobre sua saúde!</p>
+                <p class="intro-text">Aqui vamos conhecer um pouco mais sobre sua saúde!</p>
 
-        <!-- Motivo da consulta (radio - único) -->
-        <div class="section">
-          <label class="section-label">Qual o principal motivo da sua consulta? *</label>
-          <div class="radio-grid">
-            <label><input type="radio" value="Emagrecimento" v-model="formData.mainReason" /> Emagrecimento</label>
-            <label><input type="radio" value="Ganho de massa muscular" v-model="formData.mainReason" /> Ganho de massa muscular</label>
-            <label><input type="radio" value="Controle de diabetes" v-model="formData.mainReason" /> Controle de diabetes</label>
-            <label><input type="radio" value="Reeducação alimentar" v-model="formData.mainReason" /> Reeducação alimentar</label>
-            <label><input type="radio" value="Performance física e mental" v-model="formData.mainReason" /> Performance física e mental</label>
-          </div>
-        </div>
+                <div class="section">
+          <label class="section-label">Qual o principal motivo da sua consulta? *</label>
+          <div class="radio-grid">
+            <label><input type="radio" value="Emagrecimento" v-model="formData.mainReason" /> Emagrecimento</label>
+            <label><input type="radio" value="Ganho de massa muscular" v-model="formData.mainReason" /> Ganho de massa muscular</label>
+            <label><input type="radio" value="Controle de diabetes" v-model="formData.mainReason" /> Controle de diabetes</label>
+            <label><input type="radio" value="Reeducação alimentar" v-model="formData.mainReason" /> Reeducação alimentar</label>
+            <label><input type="radio" value="Performance física e mental" v-model="formData.mainReason" /> Performance física e mental</label>
+          </div>
+        </div>
 
-        <!-- Condições de saúde (checkboxes) -->
-        <div class="section">
-          <label class="section-label">Você possui ou já teve alguma das condições abaixo? *</label>
-          <div class="checkbox-grid">
-            <label v-for="c in healthConditions" :key="c">
-              <input type="checkbox" :value="c" v-model="formData.healthConditions" /> {{ c }}
-            </label>
-          </div>
-          <input v-model="formData.healthConditionsOther" placeholder="Outro:" />
-        </div>
+                <div class="section">
+          <label class="section-label">Você possui ou já teve alguma das condições abaixo? *</label>
+          <div class="checkbox-grid">
+            <label v-for="c in healthConditions" :key="c">
+              <input type="checkbox" :value="c" v-model="formData.healthConditions" /> {{ c }}
+            </label>
+          </div>
+          <input v-model="formData.healthConditionsOther" placeholder="Outro:" />
+        </div>
 
-        <!-- Alergias / intolerâncias -->
-        <div class="section">
-          <label class="section-label">Possui alguma alergia ou intolerância? *</label>
-          <div class="checkbox-grid">
-            <label v-for="a in allergiesOptions" :key="a">
-              <input type="checkbox" :value="a" v-model="formData.allergies" /> {{ a }}
-            </label>
-          </div>
-          <input v-model="formData.allergiesOther" placeholder="Outro:" />
-        </div>
+                <div class="section">
+          <label class="section-label">Possui alguma alergia ou intolerância? *</label>
+          <div class="checkbox-grid">
+            <label v-for="a in allergiesOptions" :key="a">
+              <input type="checkbox" :value="a" v-model="formData.allergies" /> {{ a }}
+            </label>
+          </div>
+          <input v-model="formData.allergiesOther" placeholder="Outro:" />
+        </div>
 
-        <!-- Cirurgias -->
-        <div class="section">
-          <label class="section-label">Você já realizou alguma cirurgia? *</label>
-          <div class="checkbox-grid">
-            <label v-for="s in surgeriesOptions" :key="s">
-              <input type="checkbox" :value="s" v-model="formData.surgeries" /> {{ s }}
-            </label>
-          </div>
-          <input v-model="formData.surgeriesOther" placeholder="Outro:" />
-        </div>
+                <div class="section">
+          <label class="section-label">Você já realizou alguma cirurgia? *</label>
+          <div class="checkbox-grid">
+            <label v-for="s in surgeriesOptions" :key="s">
+              <input type="checkbox" :value="s" v-model="formData.surgeries" /> {{ s }}
+            </label>
+          </div>
+          <input v-model="formData.surgeriesOther" placeholder="Outro:" />
+        </div>
 
-        <!-- Atividade física -->
-        <div class="section">
-          <label class="section-label">Atividade física — Agora vamos entender seus hábitos</label>
-          <p class="muted">Qual atividade mais te descreve? *</p>
-          <div class="radio-grid">
-            <label v-for="a in activityOptions" :key="a">
-              <input type="radio" :value="a" v-model="formData.activityType" /> {{ a }}
-            </label>
-          </div>
+                <div class="section">
+          <label class="section-label">Atividade física — Agora vamos entender seus hábitos</label>
+          <p class="muted">Qual atividade mais te descreve? *</p>
+          <div class="radio-grid">
+            <label v-for="a in activityOptions" :key="a">
+              <input type="radio" :value="a" v-model="formData.activityType" /> {{ a }}
+            </label>
+          </div>
 
-          <p class="muted">Frequência</p>
-          <div class="radio-group">
-            <label><input type="radio" value="Nenhuma vez por semana" v-model="formData.activityFrequency" /> Nenhuma vez por semana</label>
-            <label><input type="radio" value="1-2x por semana" v-model="formData.activityFrequency" /> 1-2x por semana</label>
-            <label><input type="radio" value="3-4x por semana" v-model="formData.activityFrequency" /> 3-4x por semana</label>
-            <label><input type="radio" value="5 ou mais vezes por semana" v-model="formData.activityFrequency" /> 5 ou mais vezes por semana</label>
-          </div>
+          <p class="muted">Frequência</p>
+          <div class="radio-group">
+            <label><input type="radio" value="Nenhuma vez por semana" v-model="formData.activityFrequency" /> Nenhuma vez por semana</label>
+            <label><input type="radio" value="1-2x por semana" v-model="formData.activityFrequency" /> 1-2x por semana</label>
+            <label><input type="radio" value="3-4x por semana" v-model="formData.activityFrequency" /> 3-4x por semana</label>
+            <label><input type="radio" value="5 ou mais vezes por semana" v-model="formData.activityFrequency" /> 5 ou mais vezes por semana</label>
+          </div>
 
-          <p class="muted">Quantos minutos por dia de Atividade física?</p>
-          <div class="radio-group">
-            <label><input type="radio" value="Nenhum Minuto" v-model="formData.activityMinutes" /> Nenhum Minuto</label>
-            <label><input type="radio" value="30 min" v-model="formData.activityMinutes" /> 30 min</label>
-            <label><input type="radio" value="60 min" v-model="formData.activityMinutes" /> 60 min</label>
-            <label><input type="radio" value="90 min" v-model="formData.activityMinutes" /> 90 min</label>
-          </div>
-        </div>
+          <p class="muted">Quantos minutos por dia de Atividade física?</p>
+          <div class="radio-group">
+            <label><input type="radio" value="Nenhum Minuto" v-model="formData.activityMinutes" /> Nenhum Minuto</label>
+            <label><input type="radio" value="30 min" v-model="formData.activityMinutes" /> 30 min</label>
+            <label><input type="radio" value="60 min" v-model="formData.activityMinutes" /> 60 min</label>
+            <label><input type="radio" value="90 min" v-model="formData.activityMinutes" /> 90 min</label>
+          </div>
+        </div>
 
-        <!-- Sono -->
-        <div class="section">
-          <label class="section-label">Como está seu sono — Me conte como você está dormindo, vai ajudar muito no seu
-            planejamento</label>
+                <div class="section">
+          <label class="section-label">Como está seu sono — Me conte como você está dormindo, vai ajudar muito no seu
+            planejamento</label>
 
-          <p class="muted">Qualidade do sono *</p>
-          <div class="radio-group">
-            <label><input type="radio" value="Boa" v-model="formData.sleepQuality" /> Boa</label>
-            <label><input type="radio" value="Regular" v-model="formData.sleepQuality" /> Regular</label>
-            <label><input type="radio" value="Ruim" v-model="formData.sleepQuality" /> Ruim</label>
-          </div>
+          <p class="muted">Qualidade do sono *</p>
+          <div class="radio-group">
+            <label><input type="radio" value="Boa" v-model="formData.sleepQuality" /> Boa</label>
+            <label><input type="radio" value="Regular" v-model="formData.sleepQuality" /> Regular</label>
+            <label><input type="radio" value="Ruim" v-model="formData.sleepQuality" /> Ruim</label>
+          </div>
 
-          <p class="muted">Acorda durante a noite? *</p>
-          <div class="radio-group">
-            <label><input type="radio" value="Não" v-model="formData.wakesAtNight" /> Não</label>
-            <label><input type="radio" value="Pelo menos 1x" v-model="formData.wakesAtNight" /> Pelo menos 1 x</label>
-            <label><input type="radio" value="Mais que 1x por noite" v-model="formData.wakesAtNight" /> Mais que 1 x por noite</label>
-          </div>
-        </div>
+          <p class="muted">Acorda durante a noite? *</p>
+          <div class="radio-group">
+            <label><input type="radio" value="Não" v-model="formData.wakesAtNight" /> Não</label>
+            <label><input type="radio" value="Pelo menos 1x" v-model="formData.wakesAtNight" /> Pelo menos 1 x</label>
+            <label><input type="radio" value="Mais que 1x por noite" v-model="formData.wakesAtNight" /> Mais que 1 x por noite</label>
+          </div>
+        </div>
 
-        <!-- Evacuação / rotina -->
-        <div class="section">
-          <label class="section-label">Entender como é sua rotina vai ser valioso nesse processo</label>
+                <div class="section">
+          <label class="section-label">Entender como é sua rotina vai ser valioso nesse processo</label>
 
-          <p class="muted">Quantas vezes por semana você evacua? *</p>
-          <div class="radio-group">
-            <label><input type="radio" value="Todo dia" v-model="formData.bowelFrequency" /> Todo dia</label>
-            <label><input type="radio" value="5 x por semana" v-model="formData.bowelFrequency" /> 5 x por semana</label>
-            <label><input type="radio" value="3 x por semana" v-model="formData.bowelFrequency" /> 3 x por semana</label>
-            <label><input type="radio" value="1 x por semana" v-model="formData.bowelFrequency" /> 1 x por semana</label>
-          </div>
-        </div>
+          <p class="muted">Quantas vezes por semana você evacua? *</p>
+          <div class="radio-group">
+            <label><input type="radio" value="Todo dia" v-model="formData.bowelFrequency" /> Todo dia</label>
+            <label><input type="radio" value="5 x por semana" v-model="formData.bowelFrequency" /> 5 x por semana</label>
+            <label><input type="radio" value="3 x por semana" v-model="formData.bowelFrequency" /> 3 x por semana</label>
+            <label><input type="radio" value="1 x por semana" v-model="formData.bowelFrequency" /> 1 x por semana</label>
+          </div>
+        </div>
 
-        <!-- Estresse / álcool / tabagismo / hidratação -->
-        <div class="section">
-          <label class="section-label">Vamos aprofundar um pouco sobre você!</label>
+                <div class="section">
+          <label class="section-label">Vamos aprofundar um pouco sobre você!</label>
 
-          <p class="muted">Estresse *</p>
-          <div class="radio-group">
-            <label><input type="radio" value="Baixo" v-model="formData.stressLevel" /> Baixo</label>
-            <label><input type="radio" value="Moderado" v-model="formData.stressLevel" /> Moderado</label>
-            <label><input type="radio" value="Alto" v-model="formData.stressLevel" /> Alto</label>
-          </div>
+          <p class="muted">Estresse *</p>
+          <div class="radio-group">
+            <label><input type="radio" value="Baixo" v-model="formData.stressLevel" /> Baixo</label>
+            <label><input type="radio" value="Moderado" v-model="formData.stressLevel" /> Moderado</label>
+            <label><input type="radio" value="Alto" v-model="formData.stressLevel" /> Alto</label>
+          </div>
 
-          <p class="muted">Consumo de álcool *</p>
-          <div class="radio-group">
-            <label><input type="radio" value="Não consome" v-model="formData.alcohol" /> Não consome</label>
-            <label><input type="radio" value="Socialmente 1-2 x por semana" v-model="formData.alcohol" /> Socialmente 1-2 x por semana</label>
-            <label><input type="radio" value="Frequente 3-4 x por semana" v-model="formData.alcohol" /> Frequente 3-4 x por semana</label>
-            <label><input type="radio" value="Uso diário" v-model="formData.alcohol" /> Uso diário</label>
-          </div>
+          <p class="muted">Consumo de álcool *</p>
+          <div class="radio-group">
+            <label><input type="radio" value="Não consome" v-model="formData.alcohol" /> Não consome</label>
+            <label><input type="radio" value="Socialmente 1-2 x por semana" v-model="formData.alcohol" /> Socialmente 1-2 x por semana</label>
+            <label><input type="radio" value="Frequente 3-4 x por semana" v-model="formData.alcohol" /> Frequente 3-4 x por semana</label>
+            <label><input type="radio" value="Uso diário" v-model="formData.alcohol" /> Uso diário</label>
+          </div>
 
-          <p class="muted">Tabagismo *</p>
-          <div class="radio-group">
-            <label><input type="radio" value="Sim" v-model="formData.smoking" /> Sim</label>
-            <label><input type="radio" value="Não" v-model="formData.smoking" /> Não</label>
-          </div>
+          <p class="muted">Tabagismo *</p>
+          <div class="radio-group">
+            <label><input type="radio" value="Sim" v-model="formData.smoking" /> Sim</label>
+            <label><input type="radio" value="Não" v-model="formData.smoking" /> Não</label>
+          </div>
 
-          <p class="muted">Hidratação (quantos litros por dia) *</p>
-          <div class="radio-group">
-            <label><input type="radio" value="Menos de 1L" v-model="formData.hydration" /> Menos de 1L</label>
-            <label><input type="radio" value="Entre 1L e 2L" v-model="formData.hydration" /> Entre 1L e 2L</label>
-            <label><input type="radio" value="Mais de 2L" v-model="formData.hydration" /> Mais de 2L</label>
-          </div>
-        </div>
+          <p class="muted">Hidratação (quantos litros por dia) *</p>
+          <div class="radio-group">
+            <label><input type="radio" value="Menos de 1L" v-model="formData.hydration" /> Menos de 1L</label>
+            <label><input type="radio" value="Entre 1L e 2L" v-model="formData.hydration" /> Entre 1L e 2L</label>
+            <label><input type="radio" value="Entre 2L e 3L" v-model="formData.hydration" /> Entre 2L e 3L</label>
+            <label><input type="radio" value="Mais de 3L" v-model="formData.hydration" /> Mais de 3L</label>
+          </div>
+        </div>
 
-        <!-- Medicações -->
-        <div class="section">
-          <label class="section-label">Lembre de tudo, inclusive suplementos.</label>
-          <p class="muted">Faz uso de medicações contínuas? *</p>
-          <div class="radio-group">
-            <label><input type="radio" value="Sim" v-model="formData.continuousMedication" /> Sim</label>
-            <label><input type="radio" value="Não" v-model="formData.continuousMedication" /> Não</label>
-          </div>
-        </div>
+                <div class="section">
+          <label class="section-label">Lembre de tudo, inclusive suplementos.</label>
+          <p class="muted">Faz uso de medicações contínuas? *</p>
+          <div class="radio-group">
+            <label><input type="radio" value="Sim" v-model="formData.continuousMedication" /> Sim</label>
+            <label><input type="radio" value="Não" v-model="formData.continuousMedication" /> Não</label>
+          </div>
+        </div>
 
-        <!-- Botões de navegação -->
-        <div class="button-group">
-          <button type="button" @click="prevStep" class="signup-btn secondary-btn">Voltar</button>
-          <button type="button" @click="signup" :disabled="loading" class="signup-btn">
-            {{ loading ? 'Criando conta...' : 'Concluir Cadastro' }}
-          </button>
-        </div>
-      </div>
-    </form>
+                <div class="button-group">
+          <button type="button" @click="prevStep" class="signup-btn secondary-btn">Voltar</button>
+          <button type="submit" :disabled="loading" class="signup-btn">
+            {{ loading ? 'Criando conta...' : 'Concluir Cadastro' }}
+          </button>
+        </div>
+      </div>
+    </form>
 
-    <!-- Login -->
-    <p class="login-text">
-      Já tem uma conta?
-      <router-link to="/" class="login-link">Faça login</router-link>
-    </p>
-  </div>
+        <p class="login-text">
+      Já tem uma conta?
+      <router-link to="/" class="login-link">Faça login</router-link>
+    </p>
+  </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import { Sun as SunIcon, Moon as MoonIcon } from "lucide-vue-next";
+import { type User, type UserAnamnesis } from "@/types/User"; // Ajuste o caminho se necessário
 
-interface SignupResponse {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-}
+// Interface para a resposta da criação do usuário
+interface SignupResponse extends User {}
 
 export default defineComponent({
   name: "Signup",
@@ -253,68 +232,99 @@ export default defineComponent({
     const router = useRouter();
     const currentStep = ref(1);
 
-    // Form data - inclui todos os campos de anamnese
+    // Mapeamentos de valores do formulário para os ENUMs do backend
+    const MAPPERS = {
+      mainGoal: {
+        "Emagrecimento": "WEIGHT_LOSS",
+        "Ganho de massa muscular": "MUSCLE_GAIN",
+        "Controle de diabetes": "DIABETES_CONTROL",
+        "Reeducação alimentar": "DIET_REEDUCATION",
+        "Performance física e mental": "PHYSICAL_MENTAL_PERFORMANCE",
+      },
+      activityType: {
+        "Sedentário(a)": "SEDENTARY",
+        "Caminhada": "WALKING",
+        "Musculação": "WEIGHT_TRAINING",
+        "Corrida": "RUNNING",
+        "Crossfit": "CROSSFIT",
+        "Natação": "SWIMMING",
+        "Luta": "FIGHT",
+        "Outro": "OTHER",
+      },
+      frequency: {
+        "Nenhuma vez por semana": "NONE",
+        "1-2x por semana": "ONE_2X_WEEK",
+        "3-4x por semana": "THREE_4X_WEEK",
+        "5 ou mais vezes por semana": "FIVE_X_OR_MORE",
+      },
+      sleepQuality: {
+        "Boa": "GOOD",
+        "Regular": "REGULAR",
+        "Ruim": "BAD",
+      },
+      wakesAtNight: {
+        "Não": "NO",
+        "Pelo menos 1x": "ONCE",
+        "Mais que 1x por noite": "MORE_THAN_ONCE",
+      },
+      bowelFrequency: {
+        "Todo dia": "EVERY_DAY",
+        "5 x por semana": "FIVE_X_WEEK",
+        "3 x por semana": "THREE_X_WEEK",
+        "1 x por semana": "ONE_X_WEEK",
+      },
+      stressLevel: {
+        "Baixo": "LOW",
+        "Moderado": "MODERATE",
+        "Alto": "HIGH",
+      },
+      alcohol: {
+        "Não consome": "DOES_NOT_CONSUME",
+        "Socialmente 1-2 x por semana": "SOCIAL_1_2X_WEEK",
+        "Frequente 3-4 x por semana": "FREQUENT_3_4X_WEEK",
+        "Uso diário": "DAILY_USE",
+      },
+      hydration: {
+        "Menos de 1L": "LESS_THAN_1L",
+        "Entre 1L e 2L": "BETWEEN_1_2L",
+        "Entre 2L e 3L": "BETWEEN_2_3L",
+        "Mais de 3L": "MORE_THAN_3L",
+      },
+    };
+
     const formData = ref({
-      // Conta
+      // Etapa 1: Dados do Usuário
       name: "",
       email: "",
       password: "",
-
-      // Dados básicos/anamnese
-      age: undefined as number | undefined,
-      birthDate: "",
-      sex: "",
-      profession: "",
       weight: undefined as number | undefined,
       height: undefined as number | undefined,
+      birthDate: "",
+      gender: "", // Adicionado campo de gênero/sexo
 
-      // Motivo
+      // Etapa 2: Anamnese
+      age: undefined as number | undefined,
       mainReason: "",
-
-      // Condições
       healthConditions: [] as string[],
       healthConditionsOther: "",
-
-      // Alergias
       allergies: [] as string[],
       allergiesOther: "",
-
-      // Cirurgias
       surgeries: [] as string[],
       surgeriesOther: "",
-
-      // Atividade física
       activityType: "",
       activityFrequency: "",
       activityMinutes: "",
-
-      // Sono
       sleepQuality: "",
       wakesAtNight: "",
-
-      // Rotina / evacuação
       bowelFrequency: "",
-
-      // Estresse / álcool / tabagismo / hidratação
       stressLevel: "",
       alcohol: "",
-      smoking: "",
+      smoking: "", // 'Sim' ou 'Não'
       hydration: "",
-
-      // Medicações
-      continuousMedication: "",
-      medicationList: "",
-
-      // Objetivo e nível de atividade (mantive campos anteriores)
-      goal: "",
-      activityLevel: "",
-      dietaryPreferences: [] as string[],
-      restrictions: [] as string[],
+      continuousMedication: "", // 'Sim' ou 'Não'
     });
 
     const confirmPassword = ref("");
-    const newPreference = ref("");
-    const newRestriction = ref("");
     const loading = ref(false);
     const errorMessage = ref("");
     const successMessage = ref("");
@@ -322,75 +332,28 @@ export default defineComponent({
 
     const API_URL = "http://localhost:8080/api";
 
-    // Opções usadas na UI
+    // Opções para os formulários (mantidas como no original)
     const healthConditions = [
-      "Diabetes tipo 1",
-      "Diabetes tipo 2",
-      "Hipertensão arterial",
-      "Dislipidemia (colesterol, triglicerídeos)",
-      "Doença renal",
-      "Doença hepática",
-      "Gastrite / refluxo",
-      "intestino preso / diarreia",
-      "Osteoporose",
-      "Doença cardiovascular (infarto, insuficiência cardíaca)",
-      "Câncer",
-      "Depressão / Ansiedade",
-      "Doenças autoimunes",
+      "Diabetes tipo 1", "Diabetes tipo 2", "Hipertensão arterial",
+      "Dislipidemia (colesterol, triglicerídeos)", "Doença renal", "Doença hepática",
+      "Gastrite / refluxo", "intestino preso / diarreia", "Osteoporose",
+      "Doença cardiovascular (infarto, insuficiência cardíaca)", "Câncer",
+      "Depressão / Ansiedade", "Doenças autoimunes",
     ];
+    const allergiesOptions = ["Não", "Intolerância à lactose", "Sensibilidade ao glúten / doença celíaca", "Alergia alimentar", "Alergia medicamentosa"];
+    const surgeriesOptions = ["Bariátrica", "Vesícula", "Hérnia de hiato (cirurgia do refluxo)", "Ortopédica", "Cesárea / Ginecológica"];
+    const activityOptions = ["Sedentário(a)", "Caminhada", "Musculação", "Corrida", "Crossfit", "Natação", "Luta", "Outro"];
 
-    const allergiesOptions = [
-      "Não",
-      "Intolerância à lactose",
-      "Sensibilidade ao glúten / doença celíaca",
-      "Alergia alimentar",
-      "Alergia medicamentosa",
-    ];
-
-    const surgeriesOptions = [
-      "Bariátrica",
-      "Vesícula",
-      "Hérnia de hiato (cirurgia do refluxo)",
-      "Ortopédica",
-      "Cesárea / Ginecológica",
-    ];
-
-    const activityOptions = ["Sedentário(a)", "Caminhada", "Musculação", "Corrida", "Crossfit", "Natação", "Outro"];
-
-    // Computed
-    const passwordsMatch = computed(
-      () => formData.value.password === confirmPassword.value && formData.value.password.length > 0
-    );
-
-    const canGoNextStep1 = computed(() => {
-      return !!formData.value.name && !!formData.value.email && passwordsMatch.value;
-    });
-
-    // Preference / restriction tag helpers (mantive para compatibilidade)
-    const addPreference = () => {
-      if (newPreference.value.trim() && !formData.value.dietaryPreferences.includes(newPreference.value.trim())) {
-        formData.value.dietaryPreferences.push(newPreference.value.trim());
-        newPreference.value = "";
-      }
-    };
-    const removePreference = (index: number) => formData.value.dietaryPreferences.splice(index, 1);
-
-    const addRestriction = () => {
-      if (newRestriction.value.trim() && !formData.value.restrictions.includes(newRestriction.value.trim())) {
-        formData.value.restrictions.push(newRestriction.value.trim());
-        newRestriction.value = "";
-      }
-    };
-    const removeRestriction = (index: number) => formData.value.restrictions.splice(index, 1);
+    const passwordsMatch = computed(() => formData.value.password === confirmPassword.value && formData.value.password.length > 0);
+    const canGoNextStep1 = computed(() => !!formData.value.name && !!formData.value.email && passwordsMatch.value);
 
     const nextStep = () => {
       if (!canGoNextStep1.value) {
-        errorMessage.value = "Preencha todos os campos obrigatórios (nome, email e senha) corretamente antes de prosseguir.";
+        errorMessage.value = "Preencha nome, email e senha corretamente para prosseguir.";
         return;
       }
       errorMessage.value = "";
       currentStep.value = 2;
-      // scroll to top of form if needed
       window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
@@ -400,46 +363,86 @@ export default defineComponent({
       window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
-    // Envio final (POST com todo o formData)
+    // NOVA FUNÇÃO DE CADASTRO
     const signup = async () => {
-      // Example minimal validation for some required anamnese fields (you can expand)
       if (!formData.value.mainReason) {
-        errorMessage.value = "Por favor, selecione o principal motivo da sua consulta.";
+        errorMessage.value = "O principal motivo da consulta é obrigatório.";
         return;
       }
       loading.value = true;
       errorMessage.value = "";
       successMessage.value = "";
 
-      try {
-        // preparar payload (se quiser renomear campos para backend, faça aqui)
-        const payload = { ...formData.value };
+      let createdUser: SignupResponse | null = null;
 
-        const response = await fetch(`${API_URL}/users/signup`, {
+      try {
+        // --- ETAPA 1: Criar o usuário ---
+        const userPayload = {
+          name: formData.value.name,
+          email: formData.value.email,
+          password: formData.value.password,
+          weight: formData.value.weight,
+          height: formData.value.height,
+          birthDate: formData.value.birthDate || null,
+          gender: formData.value.gender,
+        };
+
+        const userResponse = await fetch(`${API_URL}/users/signup`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(userPayload),
         });
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || "Erro ao criar conta");
+        if (!userResponse.ok) {
+          const errorData = await userResponse.json();
+          throw new Error(errorData.message || "Falha ao criar a conta do usuário.");
+        }
+        
+        createdUser = await userResponse.json();
+        const userId = createdUser!.id;
+
+        // --- ETAPA 2: Criar a anamnese ---
+        const anamnesisPayload: Omit<UserAnamnesis, 'id'> = {
+          userId,
+          mainGoal: MAPPERS.mainGoal[formData.value.mainReason as keyof typeof MAPPERS.mainGoal],
+          medicalConditions: [...formData.value.healthConditions, formData.value.healthConditionsOther].filter(Boolean).join('; '),
+          allergies: [...formData.value.allergies, formData.value.allergiesOther].filter(Boolean).join('; '),
+          surgeries: [...formData.value.surgeries, formData.value.surgeriesOther].filter(Boolean).join('; '),
+          activityType: MAPPERS.activityType[formData.value.activityType as keyof typeof MAPPERS.activityType],
+          frequency: MAPPERS.frequency[formData.value.activityFrequency as keyof typeof MAPPERS.frequency],
+          activityMinutesPerDay: parseInt(formData.value.activityMinutes) || 0,
+          sleepQuality: MAPPERS.sleepQuality[formData.value.sleepQuality as keyof typeof MAPPERS.sleepQuality],
+          wakesDuringNight: MAPPERS.wakesAtNight[formData.value.wakesAtNight as keyof typeof MAPPERS.wakesAtNight],
+          bowelFrequency: MAPPERS.bowelFrequency[formData.value.bowelFrequency as keyof typeof MAPPERS.bowelFrequency],
+          stressLevel: MAPPERS.stressLevel[formData.value.stressLevel as keyof typeof MAPPERS.stressLevel],
+          alcoholUse: MAPPERS.alcohol[formData.value.alcohol as keyof typeof MAPPERS.alcohol],
+          smoking: formData.value.smoking === 'Sim',
+          hydrationLevel: MAPPERS.hydration[formData.value.hydration as keyof typeof MAPPERS.hydration],
+          continuousMedication: formData.value.continuousMedication === 'Sim',
+        };
+
+        const anamnesisResponse = await fetch(`${API_URL}/anamnesis/${userId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(anamnesisPayload)
+        });
+
+        if (!anamnesisResponse.ok) {
+            const errorData = await anamnesisResponse.json();
+            throw new Error(errorData.message || 'Conta criada, mas falha ao salvar dados de saúde.');
         }
 
-        const userData: SignupResponse = await response.json();
-        successMessage.value = "Conta criada com sucesso! Aguarde a aprovação do administrador.";
+        successMessage.value = "Conta criada com sucesso! Você será redirecionado para o login.";
+        setTimeout(() => router.push("/"), 3000);
 
-        // redirecionar após curto delay
-        setTimeout(() => router.push("/login"), 3000);
       } catch (error: any) {
-        console.error("Erro no signup:", error);
-        errorMessage.value = error.message || "Erro ao criar conta.";
+        console.error("Erro no processo de signup:", error);
+        errorMessage.value = error.message;
       } finally {
         loading.value = false;
       }
     };
 
-    // handler usado pelo form submit para evitar envio de formulário padrão
     const handleSubmit = () => {
       if (currentStep.value === 1) {
         nextStep();
@@ -448,6 +451,7 @@ export default defineComponent({
       }
     };
 
+    // Funções de tema (mantidas)
     const toggleTheme = () => {
       darkMode.value = !darkMode.value;
       localStorage.setItem("theme", darkMode.value ? "dark" : "light");
@@ -470,8 +474,6 @@ export default defineComponent({
     return {
       formData,
       confirmPassword,
-      newPreference,
-      newRestriction,
       loading,
       errorMessage,
       successMessage,
@@ -481,10 +483,6 @@ export default defineComponent({
       nextStep,
       prevStep,
       signup,
-      addPreference,
-      removePreference,
-      addRestriction,
-      removeRestriction,
       toggleTheme,
       healthConditions,
       allergiesOptions,
