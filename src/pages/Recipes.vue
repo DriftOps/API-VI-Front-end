@@ -279,7 +279,6 @@ export default defineComponent({
   }
 ])
 
-
     const filteredRecipes = computed(() => {
       let filtered = recipes.value
 
