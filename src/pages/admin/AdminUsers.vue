@@ -103,7 +103,7 @@
             </table>
           </div>
         </div>
-        Modal
+       
         <div v-if="showUserModal" class="modal-overlay">
           <div class="modal">
             <h3>Detalhes do Usuário</h3>
@@ -327,6 +327,7 @@ export default defineComponent({
 <style scoped>
 .admin-users {
   padding: 20px;
+  width: 69vw;
 }
 
 .page-header {
