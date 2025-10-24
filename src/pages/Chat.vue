@@ -128,6 +128,7 @@ import { useUserStore } from '@/stores/user'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import { sendMessageToAI } from "@/api/chatApi"
 import MarkdownIt from "markdown-it"
+import { useMealStore } from '@/stores/meal'
 
 // Ícones
 import {
@@ -168,6 +169,7 @@ export default defineComponent({
   },
   setup() {
     const userStore = useUserStore()
+    const mealStore = useMealStore()
     const messagesContainer = ref<HTMLDivElement>()
     const messageInput = ref<HTMLInputElement>()
     const newMessage = ref('')
@@ -179,6 +181,7 @@ export default defineComponent({
 
     const user = computed(() => userStore.user)
     const chatHistory = computed(() => userStore.chatHistory)
+    
 
     // Markdown parser
     const md = new MarkdownIt({
