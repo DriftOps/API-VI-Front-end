@@ -1,153 +1,103 @@
 <template>
-    <DashboardLayout>
-      <div class="meal-log-content">
-        <div class="content-header">
-          <h1>
-            <UtensilsIcon :size="24" class="header-icon" />
-            Registro de Refeições
-          </h1>
-          <div class="header-actions">
-            <button @click="addMeal" class="add-btn">
-              <PlusIcon :size="16" />
-              Adicionar Refeição
-            </button>
+  <DashboardLayout>
+    <div class="meal-log-content">
+      <div class="content-header">
+        <h1>
+          <UtensilsIcon :size="24" class="header-icon" />
+          Registro de Refeições
+        </h1>
+        <div class="header-actions">
+          <input type="date" v-model="selectedDate" @change="fetchMeals" class="date-picker" />
+        </div>
+      </div>
+
+      <div class="content-area">
+        <div class="meal-list">
+          <MealItem
+            v-for="meal in meals"
+            :key="meal.id"
+            :meal="meal"
+            @remove="removeMeal"
+          />
+          <div v-if="meals.length === 0" class="empty-list">
+            <p>Nenhuma refeição registrada para esta data.</p>
           </div>
         </div>
-  
-        <div class="content-area">
-          <!-- Lista de refeições registradas -->
-          <div class="meal-list">
-            <div
-              v-for="(meal, index) in meals"
-              :key="index"
-              class="meal-item"
-            >
-              <div class="meal-info">
-                <input
-                  v-model="meal.type"
-                  placeholder="Tipo (ex: Café da manhã)"
-                  class="meal-type-input"
-                />
-                <input
-                  v-model="meal.description"
-                  placeholder="Descrição (ex: Arroz + frango)"
-                  class="meal-desc-input"
-                />
-                <input
-                  type="number"
-                  v-model.number="meal.calories"
-                  placeholder="Calorias"
-                  class="meal-calories-input"
-                />
-              </div>
-              <div class="meal-actions">
-                <button @click="removeMeal(index)" class="remove-btn">
-                  <Trash2Icon :size="16" />
-                </button>
-              </div>
+
+        <div class="nutrition-summary">
+          <h2>Resumo Nutricional do Dia</h2>
+          <div class="nutrition-cards">
+            <div class="nutrition-card">
+              <div class="nutrition-value">{{ totalCalories }}</div>
+              <div class="nutrition-label">Calorias</div>
             </div>
-          </div>
-  
-          <!-- Resumo nutricional -->
-          <div class="nutrition-summary">
-            <h2>Resumo Nutricional do Dia</h2>
-            <div class="nutrition-cards">
-              <div class="nutrition-card">
-                <div class="nutrition-value">{{ totalCalories }}</div>
-                <div class="nutrition-label">Calorias</div>
-              </div>
-              <div class="nutrition-card">
-                <div class="nutrition-value">{{ totalProtein }}g</div>
-                <div class="nutrition-label">Proteínas</div>
-              </div>
-              <div class="nutrition-card">
-                <div class="nutrition-value">{{ totalCarbs }}g</div>
-                <div class="nutrition-label">Carboidratos</div>
-              </div>
-              <div class="nutrition-card">
-                <div class="nutrition-value">{{ totalFat }}g</div>
-                <div class="nutrition-label">Gorduras</div>
-              </div>
+            <div class="nutrition-card">
+              <div class="nutrition-value">{{ totalProtein }}g</div>
+              <div class="nutrition-label">Proteínas</div>
+            </div>
+            <div class="nutrition-card">
+              <div class="nutrition-value">{{ totalCarbs }}g</div>
+              <div class="nutrition-label">Carboidratos</div>
+            </div>
+            <div class="nutrition-card">
+              <div class="nutrition-value">{{ totalFat }}g</div>
+              <div class="nutrition-label">Gorduras</div>
             </div>
           </div>
         </div>
       </div>
-    </DashboardLayout>
-  </template>
-  
-  <script lang="ts">
-  import { defineComponent, ref, computed } from 'vue'
-  import DashboardLayout from '@/layouts/DashboardLayout.vue'
-  import { UtensilsIcon, PlusIcon, Trash2Icon } from 'lucide-vue-next'
-  
-  interface Meal {
-    type: string
-    description: string
-    calories: number
-    protein: number
-    carbs: number
-    fat: number
-  }
-  
-  export default defineComponent({
-    name: 'MealLog',
-    components: {
-      DashboardLayout,
-      UtensilsIcon,
-      PlusIcon,
-      Trash2Icon
-    },
-    setup() {
-      const meals = ref<Meal[]>([
-        { type: 'Café da manhã', description: 'Ovos + pão integral', calories: 300, protein: 20, carbs: 25, fat: 10 },
-        { type: 'Almoço', description: 'Frango + arroz + salada', calories: 500, protein: 35, carbs: 50, fat: 15 }
-      ])
-  
-      const addMeal = () => {
-        meals.value.push({
-          type: '',
-          description: '',
-          calories: 0,
-          protein: 0,
-          carbs: 0,
-          fat: 0
-        })
+    </div>
+  </DashboardLayout>
+</template>
+
+<script lang="ts">
+import { defineComponent, onMounted } from 'vue'
+import DashboardLayout from '@/layouts/DashboardLayout.vue'
+import MealItem from '../components/MealItem.vue'
+import { UtensilsIcon } from 'lucide-vue-next'
+import { useMealStore } from '@/stores/meal'
+import { storeToRefs } from 'pinia'
+
+export default defineComponent({
+  name: 'MealLog',
+  components: { DashboardLayout, MealItem, UtensilsIcon },
+  setup() {
+    const mealStore = useMealStore()
+
+    const {
+      meals,
+      selectedDate,
+      totalCalories,
+      totalProtein,
+      totalCarbs,
+      totalFat
+    } = storeToRefs(mealStore)
+
+    const { fetchMeals, removeMeal } = mealStore
+
+    onMounted(() => {
+      if (!selectedDate.value) {
+        selectedDate.value = new Date().toISOString().substr(0, 10)
       }
-  
-      const removeMeal = (index: number) => {
-        meals.value.splice(index, 1)
-      }
-  
-      const totalCalories = computed(() =>
-        meals.value.reduce((sum, m) => sum + (m.calories || 0), 0)
-      )
-  
-      const totalProtein = computed(() =>
-        meals.value.reduce((sum, m) => sum + (m.protein || 0), 0)
-      )
-  
-      const totalCarbs = computed(() =>
-        meals.value.reduce((sum, m) => sum + (m.carbs || 0), 0)
-      )
-  
-      const totalFat = computed(() =>
-        meals.value.reduce((sum, m) => sum + (m.fat || 0), 0)
-      )
-  
-      return {
-        meals,
-        addMeal,
-        removeMeal,
-        totalCalories,
-        totalProtein,
-        totalCarbs,
-        totalFat
-      }
+      fetchMeals()
+    })
+
+    return {
+      meals,
+      selectedDate,
+      fetchMeals,
+      removeMeal,
+      totalCalories,
+      totalProtein,
+      totalCarbs,
+      totalFat
     }
-  })
-  </script>
+  }
+})
+</script>
+
   
-  <style scoped>
+<style scoped>
   .meal-log-content {
     width: 69vw;
   }
@@ -174,18 +124,32 @@
   .header-icon {
     color: var(--primary-color);
   }
-  
-  .add-btn {
-    background: var(--primary-color);
-    color: white;
-    border: none;
-    padding: 10px 16px;
-    border-radius: 8px;
-    cursor: pointer;
+
+  .header-actions {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-weight: 500;
+    gap: 12px;
+  }
+
+  .date-picker {
+    background: var(--input-bg, var(--color-background));
+    border: 1px solid var(--card-border);
+    color: var(--color-text);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .date-picker:focus {
+    outline: none;
+    border-color: var(--primary-color);
+  }
+
+  .date-picker::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(var(--icon-invert-level, 0.6));
   }
   
   .content-area {
@@ -198,47 +162,14 @@
     gap: 16px;
     margin-bottom: 40px;
   }
-  
-  .meal-item {
+
+  .empty-list {
+    text-align: center;
+    padding: 40px;
     background: var(--card-bg);
-    border: 1px solid var(--card-border);
+    border: 1px dashed var(--card-border);
     border-radius: 12px;
-    padding: 16px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  .meal-info {
-    display: flex;
-    gap: 10px;
-    flex: 1;
-  }
-  
-  .meal-info input {
-    border: 1px solid var(--card-border);
-    background: var(--color-background);
-    border-radius: 8px;
-    padding: 8px 10px;
-    font-size: 14px;
-    color: var(--color-text);
-    flex: 1;
-  }
-  
-  .meal-calories-input {
-    width: 100px;
-    text-align: right;
-  }
-  
-  .meal-actions {
-    margin-left: 12px;
-  }
-  
-  .remove-btn {
-    background: transparent;
-    border: none;
-    color: var(--danger-color, #e74c3c);
-    cursor: pointer;
+    color: var(--color-text-secondary);
   }
   
   .nutrition-summary {
@@ -279,4 +210,3 @@
     color: var(--color-text-secondary);
   }
   </style>
-  
