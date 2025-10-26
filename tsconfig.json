@@ -1,11 +1,17 @@
 {
-  "files": [],
-  "references": [
-    {
-      "path": "./tsconfig.node.json"
+  "extends": "@vue/tsconfig/tsconfig.dom.json", // Ou algo similar
+  "compilerOptions": {
+    "composite": true,
+    "paths": {
+      "@/*": ["./src/*"] // Ajuste se seu @ for diferente
     },
-    {
-      "path": "./tsconfig.app.json"
-    }
-  ]
+  },
+  "include": [
+    "env.d.ts",       // Ou o nome do seu shim file
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue"
+
+  ],
+  "exclude": ["src/**/__tests__/*"], // Se você tiver testes
 }
