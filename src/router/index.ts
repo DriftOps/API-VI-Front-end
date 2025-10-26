@@ -67,6 +67,12 @@ const routes = [
     name: 'Perfil',
     component: () => import('@/pages/Profile.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/meal',
+    name: 'Refeições',
+    component: () => import('@/pages/Meal.vue'),
+    meta: { requiresAuth: true}
   }
 ]
 
