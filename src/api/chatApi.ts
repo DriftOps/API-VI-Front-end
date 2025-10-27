@@ -45,6 +45,8 @@ export async function postNewMessage(message: string): Promise<ChatMessage> {
     body: JSON.stringify({ message: message })
   });
 
+  
+
   if (!response.ok) throw new Error('Erro ao enviar mensagem');
   
   const dto: ChatMessageDTO = await response.json();
@@ -55,4 +57,31 @@ export async function postNewMessage(message: string): Promise<ChatMessage> {
     message: dto.message,
     timestamp: new Date(dto.timestamp)
   };
+}
+
+/**
+ * Envia o feedback (positivo ou negativo) para uma mensagem específica.
+ * @param messageId O ID da mensagem que está recebendo o feedback.
+ * @param feedback O tipo de feedback ('positive', 'negative') ou null para remover.
+ */
+export async function postFeedback(messageId: number, feedback: 'positive' | 'negative' | null): Promise<void> {
+  const token = localStorage.getItem('token');
+  
+  const response = await fetch(`${API_URL}/feedback/${messageId}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+
+    body: JSON.stringify({ feedback: feedback }) 
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Erro ao enviar feedback:', errorText);
+    throw new Error(`Erro ao enviar feedback: ${errorText}`);
+  }
+  
+  
 }

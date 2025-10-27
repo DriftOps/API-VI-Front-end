@@ -144,7 +144,7 @@
 import { defineComponent, ref, computed, onMounted, nextTick, watch } from 'vue';
 import { useUserStore } from '@/stores/user';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
-import { postNewMessage } from "@/api/chatApi";
+import { postNewMessage, postFeedback } from "@/api/chatApi";
 import MarkdownIt from "markdown-it";
 // Ícones
 import {
@@ -170,9 +170,6 @@ interface ChatMessage {
   type?: 'text' | 'system'
   feedback?: 'positive' | 'negative' | null
 }
-import {
-  Copy as CopyIcon
-} from 'lucide-vue-next';
 
 // Reutiliza a interface do store para consistência
 import type { ChatMessage } from '@/stores/user';
@@ -192,7 +189,7 @@ export default defineComponent({
     PaperclipIcon,
     CopyIcon,
     ThumbsUpIcon,
-    ThumbsDownIcon
+    ThumbsDownIcon,
     DashboardLayout, UserIcon, UserCheckIcon, SendIcon, LoaderIcon,
     Trash2Icon, BellIcon, BellOffIcon, SmileIcon, PaperclipIcon, CopyIcon
   },
@@ -289,19 +286,31 @@ export default defineComponent({
       }
     };
 
-    const giveFeedback = (messageId: number, type: 'positive' | 'negative') => {
-  const msg = userStore.chatHistory.find(m => m.id === messageId)
-  if (msg) {
-    msg.feedback = msg.feedback === type ? null : type // toggle
-    }
-  }
+    const giveFeedback = async (messageId: number, type: 'positive' | 'negative') => {
+      const msg = userStore.chatHistory.find(m => m.id === messageId);
+      if (!msg) return;
 
+      // 1. Determina o novo estado
+      const newFeedback = msg.feedback === type ? null : type;
 
-    const toggleSound = () => soundEnabled.value = !soundEnabled.value
-    const toggleEmojiPicker = () => showEmojiPicker.value = !showEmojiPicker.value
-    const addEmoji = (emoji: string) => { newMessage.value += emoji; messageInput.value?.focus() }
-    const attachFile = () => alert('Funcionalidade de anexar arquivo será implementada em breve!')
-    const copyMessage = (text: string) => navigator.clipboard.writeText(text)
+      // 2. Salva o estado *anterior* para reverter em caso de erro
+      const oldFeedback = msg.feedback;
+      
+      // 3. Atualização Otimista (Muda a UI imediatamente)
+      msg.feedback = newFeedback;
+
+      try {
+        // 4. Chama a API
+        await postFeedback(messageId, newFeedback);
+        // Sucesso: a UI já está atualizada.
+      } catch (error) {
+        console.error("Falha ao salvar feedback, revertendo:", error);
+        // 5. Reverte a UI em caso de falha
+        msg.feedback = oldFeedback; 
+        // (Opcional: mostrar um toast/alerta de erro para o usuário)
+      }
+    };
+
     // --- FUNÇÕES AUXILIARES ---
 
     const formatTime = (timestamp: Date | string) => {
@@ -401,6 +410,7 @@ export default defineComponent({
       attachFile,
       copyMessage,
       renderMarkdown,
+      giveFeedback
     };
   }
 });
