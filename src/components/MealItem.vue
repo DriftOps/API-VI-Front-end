@@ -34,8 +34,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from 'vue'
-// Importa o ícone de lixeira
+import { defineComponent } from 'vue'
+import type { PropType } from 'vue'
 import { Trash2Icon } from 'lucide-vue-next'
 
 interface Meal {
