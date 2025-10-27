@@ -1,7 +1,6 @@
 <template>
   <DashboardLayout>
     <div class="chat-container">
-      <!-- Header -->
       <div class="chat-header">
         <div class="chat-info">
           <div class="nutritionist-avatar">
@@ -27,15 +26,13 @@
         </div>
       </div>
 
-      <!-- Mensagens -->
       <div class="chat-messages" ref="messagesContainer">
-        <!-- Boas-vindas -->
-        <div v-if="chatHistory.length === 0" class="welcome-message">
+        <div v-if="!isLoadingHistory && chatHistory.length === 0" class="welcome-message">
           <div class="welcome-avatar">
             <UserCheckIcon :size="32" />
           </div>
           <div class="welcome-content">
-            <h3>Olá! Sou sua nutricionista</h3>
+            <h3>Olá! Sou sua nutricionista virtual</h3>
             <p>Estou aqui para ajudar você com orientações personalizadas sobre alimentação, suplementação e hábitos saudáveis. Como posso ajudar você hoje?</p>
             <div class="quick-questions">
               <button @click="sendQuickQuestion('Gostaria de uma orientação para perda de peso')" class="quick-btn">Perda de peso</button>
@@ -46,32 +43,33 @@
           </div>
         </div>
 
-        <!-- Histórico -->
-        <div 
-          v-for="message in chatHistory" 
+        <div v-if="isLoadingHistory" class="loading-history">
+          Carregando histórico...
+        </div>
+
+        <div
+          v-for="message in chatHistory"
           :key="message.id"
           :class="['message', message.from === user?.name ? 'own-message' : 'other-message']"
         >
           <div class="message-avatar">
-            {{ message.from === user?.name ? user.name.charAt(0) : 'N' }}
+            {{ message.from === user?.name ? user.name.charAt(0).toUpperCase() : 'N' }}
           </div>
           <div class="message-content-wrapper">
             <div class="message-header">
               <span class="message-sender">{{ message.from }}</span>
               <span class="message-time">{{ formatTime(message.timestamp) }}</span>
             </div>
-            <!-- Aqui entra o markdown -->
             <div class="message-content" v-html="renderMarkdown(message.message)"></div>
 
             <div v-if="message.from !== user?.name" class="message-actions">
               <button @click="copyMessage(message.message)" class="msg-action" title="Copiar mensagem">
                 <CopyIcon :size="14" />
               </button>
-            </div>
+              </div>
           </div>
         </div>
 
-        <!-- Digitando -->
         <div v-if="isTyping" class="message other-message typing-indicator">
           <div class="message-avatar">N</div>
           <div class="message-content-wrapper">
@@ -82,7 +80,6 @@
         </div>
       </div>
 
-      <!-- Input -->
       <div class="chat-input-area">
         <div class="input-actions">
           <button @click="toggleEmojiPicker" class="action-btn" title="Emojis">
@@ -92,19 +89,18 @@
             <PaperclipIcon :size="20" />
           </button>
         </div>
-        
+
         <div class="message-input-wrapper">
-          <input 
-            v-model="newMessage" 
+          <input
+            v-model="newMessage"
             @keyup.enter="sendMessage"
             placeholder="Digite sua mensagem..."
             :disabled="loading"
             ref="messageInput"
             class="message-input"
           />
-          
-          <!-- Emoji Picker -->
-          <div v-if="showEmojiPicker" class="emoji-picker">
+
+          <div v-if="showEmojiPicker" class="emoji-picker" ref="emojiPickerRef">
             <div class="emoji-grid">
               <button v-for="emoji in quickEmojis" :key="emoji" @click="addEmoji(emoji)" class="emoji-btn">
                 {{ emoji }}
@@ -123,13 +119,11 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, onMounted, nextTick, watch } from 'vue'
-import { useUserStore } from '@/stores/user'
-import DashboardLayout from '@/layouts/DashboardLayout.vue'
-import { sendMessageToAI } from "@/api/chatApi"
-import MarkdownIt from "markdown-it"
-import { useMealStore } from '@/stores/meal'
-
+import { defineComponent, ref, computed, onMounted, nextTick, watch } from 'vue';
+import { useUserStore } from '@/stores/user';
+import DashboardLayout from '@/layouts/DashboardLayout.vue';
+import { postNewMessage } from "@/api/chatApi";
+import MarkdownIt from "markdown-it";
 // Ícones
 import {
   User as UserIcon,
@@ -142,162 +136,212 @@ import {
   Smile as SmileIcon,
   Paperclip as PaperclipIcon,
   Copy as CopyIcon
-} from 'lucide-vue-next'
+} from 'lucide-vue-next';
 
-interface ChatMessage {
-  id: number
-  from: string
-  message: string
-  timestamp: Date
-  type?: 'text' | 'system'
-}
+// Reutiliza a interface do store para consistência
+import type { ChatMessage } from '@/stores/user';
 
 export default defineComponent({
   name: 'Chat',
   components: {
-    DashboardLayout,
-    UserIcon,
-    UserCheckIcon,
-    SendIcon,
-    LoaderIcon,
-    Trash2Icon,
-    BellIcon,
-    BellOffIcon,
-    SmileIcon,
-    PaperclipIcon,
-    CopyIcon
+    DashboardLayout, UserIcon, UserCheckIcon, SendIcon, LoaderIcon,
+    Trash2Icon, BellIcon, BellOffIcon, SmileIcon, PaperclipIcon, CopyIcon
   },
   setup() {
-    const userStore = useUserStore()
-    const mealStore = useMealStore()
-    const messagesContainer = ref<HTMLDivElement>()
-    const messageInput = ref<HTMLInputElement>()
-    const newMessage = ref('')
-    const loading = ref(false)
-    const isTyping = ref(false)
-    const soundEnabled = ref(true)
-    const showEmojiPicker = ref(false)
-    const isNutritionistOnline = ref(false)
+    const userStore = useUserStore();
+    const messagesContainer = ref<HTMLDivElement>();
+    const messageInput = ref<HTMLInputElement>();
+    const emojiPickerRef = ref<HTMLDivElement>(); // Ref para o picker
+    const newMessage = ref('');
+    const loading = ref(false); // Para o botão de enviar
+    const isTyping = ref(false); // Para o indicador "digitando..."
+    const isLoadingHistory = ref(true); // Para o carregamento inicial
+    const soundEnabled = ref(true);
+    const showEmojiPicker = ref(false);
+    const isNutritionistOnline = ref(false); // Pode ser substituído por lógica real
 
-    const user = computed(() => userStore.user)
-    const chatHistory = computed(() => userStore.chatHistory)
-    
+    const user = computed(() => userStore.user);
+    // Pega o histórico diretamente do store (que foi carregado no initUser)
+    const chatHistory = computed(() => userStore.chatHistory);
 
-    // Markdown parser
-    const md = new MarkdownIt({
-      breaks: true,        // quebra de linha
-      linkify: true        // transformar links em <a>
-    })
-
-    const renderMarkdown = (text: string) => {
-      return md.render(text)
-    }
+    // Configuração do MarkdownIt
+    const md = new MarkdownIt({ breaks: true, linkify: true });
+    const renderMarkdown = (text: string) => md.renderInline(text); // renderInline evita <p> extras
 
     // Emojis rápidos
-    const quickEmojis = ['😊', '👍', '❤️', '🔥', '💪', '🥗', '🍎', '💧', '🏃‍♂️', '🎯']
+    const quickEmojis = ['😊', '👍', '❤️', '🔥', '💪', '🥗', '🍎', '💧', '🏃‍♂️', '🎯'];
+
+    // --- FUNÇÕES PRINCIPAIS ---
 
     const sendMessage = async () => {
-      if (!newMessage.value.trim() || !user.value) return
-      loading.value = true
+      if (!newMessage.value.trim() || !user.value) return;
+      loading.value = true; // Desabilita input e mostra spinner no botão
+
+      const userMessageText = newMessage.value;
+
+      // 1. Adiciona mensagem do usuário à UI (Otimista)
+      const userMessage: ChatMessage = {
+        id: Date.now(), // ID temporário, backend dará o real
+        from: user.value.name, // Usa o nome do usuário logado
+        message: userMessageText,
+        timestamp: new Date()
+      };
+      userStore.addChatMessage(userMessage);
+
+      // Limpa input e fecha picker
+      newMessage.value = '';
+      showEmojiPicker.value = false;
+      isTyping.value = true; // Mostra "digitando..."
+      await nextTick(() => scrollToBottom()); // Rola para baixo
 
       try {
-        const userMessage: ChatMessage = {
-          id: Date.now(),
-          from: user.value.name,
-          message: newMessage.value,
-          timestamp: new Date()
-        }
-        userStore.addChatMessage(userMessage)
-        newMessage.value = ''
-        showEmojiPicker.value = false
-        isTyping.value = true
+        // 2. Chama o BACKEND JAVA (que por sua vez chama o Python)
+        const botMessage = await postNewMessage(userMessageText);
 
-        const resposta = await sendMessageToAI(userMessage.message)
+        isTyping.value = false; // Esconde "digitando..."
 
-        isTyping.value = false
+        // 3. Adiciona a resposta da AI (recebida do Java) à UI
+        // O `from` já vem como 'Nutricionista' da conversão no chatApi.ts
+        userStore.addChatMessage(botMessage);
 
-        const botMessage: ChatMessage = {
-          id: Date.now() + 1,
-          from: 'Nutricionista',
-          message: resposta,
-          timestamp: new Date()
-        }
-        userStore.addChatMessage(botMessage)
+        // A lógica de `meal_saved` foi MOVIDA para o backend Java (ChatService)
+        // Não precisamos mais do `useMealStore` aqui para isso.
 
-        if (soundEnabled.value) playNotificationSound()
+        if (soundEnabled.value) playNotificationSound();
+
       } catch (error) {
-        console.error('Erro ao enviar mensagem:', error)
+        console.error('Erro ao enviar mensagem para o backend Java:', error);
+        isTyping.value = false;
+        // Adiciona uma mensagem de erro na UI
         const errorMessage: ChatMessage = {
-          id: Date.now() + 2,
-          from: 'Nutricionista',
-          message: "⚠️ Ocorreu um erro ao conectar com o servidor.",
+          id: Date.now() + 2, // ID temporário
+          from: 'Sistema',
+          message: "⚠️ Ocorreu um erro ao processar sua mensagem. Tente novamente.",
           timestamp: new Date()
-        }
-        userStore.addChatMessage(errorMessage)
+        };
+        userStore.addChatMessage(errorMessage);
       } finally {
-        loading.value = false
+        loading.value = false; // Reabilita input e botão
+        await nextTick(() => scrollToBottom()); // Garante rolagem após a resposta
       }
-    }
+    };
 
     const sendQuickQuestion = (question: string) => {
-      newMessage.value = question
-      sendMessage()
-    }
-
-    const formatTime = (timestamp: Date) => {
-      return new Date(timestamp).toLocaleTimeString('pt-BR', {
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-    }
+      newMessage.value = question;
+      sendMessage();
+    };
 
     const clearChat = () => {
-      if (confirm('Tem certeza que deseja limpar todo o histórico do chat?')) {
-        userStore.clearChatHistory()
+      if (confirm('Tem certeza que deseja limpar todo o histórico desta conversa? Esta ação não pode ser desfeita.')) {
+        // Chama a ação do store (que DEVERIA chamar um endpoint no backend para limpar o DB)
+        userStore.clearChatHistory();
+        // O backend idealmente responderia com sucesso, e o frontend atualizaria
+        // Por enquanto, apenas limpa localmente
       }
-    }
+    };
 
-    const toggleSound = () => soundEnabled.value = !soundEnabled.value
-    const toggleEmojiPicker = () => showEmojiPicker.value = !showEmojiPicker.value
-    const addEmoji = (emoji: string) => { newMessage.value += emoji; messageInput.value?.focus() }
-    const attachFile = () => alert('Funcionalidade de anexar arquivo será implementada em breve!')
-    const copyMessage = (text: string) => navigator.clipboard.writeText(text)
+    // --- FUNÇÕES AUXILIARES ---
+
+    const formatTime = (timestamp: Date | string) => {
+      // Garante que temos um objeto Date
+      const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
+      if (isNaN(date.getTime())) return ''; // Retorna vazio se a data for inválida
+      return date.toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    };
+
+    const toggleSound = () => soundEnabled.value = !soundEnabled.value;
+    const toggleEmojiPicker = () => showEmojiPicker.value = !showEmojiPicker.value;
+    const addEmoji = (emoji: string) => { newMessage.value += emoji; messageInput.value?.focus(); };
+    const attachFile = () => alert('Funcionalidade de anexar arquivo ainda não implementada.');
+    const copyMessage = (text: string) => navigator.clipboard.writeText(text).then(() => { /* Opcional: mostrar feedback */ });
 
     const playNotificationSound = () => {
-      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+Dyvm0iBjiN1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+Dyvm0iBjiN1/LMeSw=')
-      audio.volume = 0.3
-      audio.play().catch(() => {})
-    }
+      try {
+        const audio = new Audio('/notification.wav'); // Use um arquivo local se tiver
+        audio.volume = 0.3;
+        audio.play().catch(e => console.warn("Erro ao tocar som:", e));
+      } catch (e) { console.warn("Erro ao criar áudio:", e) }
+    };
 
     const scrollToBottom = () => {
       if (messagesContainer.value) {
-        messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+        messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
       }
-    }
+    };
 
+    // Fecha o emoji picker se clicar fora dele
     const handleClickOutside = (event: MouseEvent) => {
-      if (showEmojiPicker.value && !(event.target as Element).closest('.emoji-picker')) {
-        showEmojiPicker.value = false
+      if (showEmojiPicker.value && emojiPickerRef.value && !emojiPickerRef.value.contains(event.target as Node) && !(event.target as Element).closest('.input-actions button:first-child')) {
+          showEmojiPicker.value = false;
       }
-    }
+    };
 
-    onMounted(() => {
-      scrollToBottom()
-      document.addEventListener('click', handleClickOutside)
-      isNutritionistOnline.value = Math.random() > 0.3
-    })
+    // --- CICLO DE VIDA E WATCHERS ---
 
-    watch(chatHistory, () => nextTick(() => scrollToBottom()))
+    onMounted(async () => {
+      isLoadingHistory.value = true;
+      try {
+        // O initUser (no App.vue ou main.ts) já deve ter chamado loadChatHistory.
+        // Se o histórico ainda estiver vazio, tentamos carregar de novo.
+        if (userStore.isAuthenticated && userStore.chatHistory.length === 0) {
+          console.log("Chat.vue mounted: Histórico vazio, tentando carregar...");
+          await userStore.loadChatHistory();
+        }
+      } catch (error) {
+        console.error("Erro no onMounted ao carregar histórico:", error);
+      } finally {
+        isLoadingHistory.value = false;
+        await nextTick(() => scrollToBottom()); // Rola após carregar
+      }
+
+      document.addEventListener('click', handleClickOutside);
+      // Simula status online (pode ser substituído por WebSocket ou polling)
+      isNutritionistOnline.value = Math.random() > 0.3;
+    });
+
+    // Rola para baixo sempre que o histórico de chat mudar
+    watch(chatHistory, async () => {
+      await nextTick(() => scrollToBottom());
+    }, { deep: true });
+
+    // Limpa o listener ao desmontar
+    watch(() => userStore.isAuthenticated, (isAuth) => {
+      if (!isAuth) {
+        document.removeEventListener('click', handleClickOutside);
+      }
+    });
+
 
     return {
-      user, chatHistory, newMessage, loading, isTyping, soundEnabled,
-      showEmojiPicker, isNutritionistOnline, messagesContainer, messageInput,
-      quickEmojis, sendMessage, sendQuickQuestion, formatTime, clearChat,
-      toggleSound, toggleEmojiPicker, addEmoji, attachFile, copyMessage,
-      renderMarkdown
-    }
+      user,
+      chatHistory,
+      newMessage,
+      loading,
+      isTyping,
+      isLoadingHistory,
+      soundEnabled,
+      showEmojiPicker,
+      isNutritionistOnline,
+      messagesContainer,
+      messageInput,
+      emojiPickerRef, 
+      quickEmojis,
+      sendMessage,
+      sendQuickQuestion,
+      formatTime,
+      clearChat,
+      toggleSound,
+      toggleEmojiPicker,
+      addEmoji,
+      attachFile,
+      copyMessage,
+      renderMarkdown,
+    };
   }
-})
+});
 </script>
 
 <style scoped>
@@ -410,6 +454,20 @@ export default defineComponent({
 .own-message {
   margin-left: auto;
   flex-direction: row-reverse;
+}
+
+.message-content :deep(a) {
+    color: var(--primary-color);
+    text-decoration: underline;
+}
+
+.message-content :deep(ul), .message-content :deep(ol) {
+    padding-left: 20px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+.message-content :deep(li) {
+    margin-bottom: 4px;
 }
 
 .message-avatar {

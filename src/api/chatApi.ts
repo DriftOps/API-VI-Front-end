@@ -1,40 +1,58 @@
-import axios from "axios";
 import { useUserStore } from "@/stores/user";
 import { useMealStore } from "@/stores/meal"; 
+import type { ChatMessage } from '@/stores/user'
 
-export async function sendMessageToAI(message: string): Promise<string> {
+const API_URL = 'http://localhost:8080/api/chat' 
+
+
+interface ChatMessageDTO {
+  id: number;
+  sender: 'user' | 'assistant';
+  message: string;
+  timestamp: string;
+  nutritionistComment?: string;
+  userId: number;
+}
+
+export async function fetchChatHistory(): Promise<ChatMessage[]> {
+  const token = localStorage.getItem('token');
   const userStore = useUserStore();
-  const mealStore = useMealStore();
+  const userName = userStore.user?.name || 'Você';
+
+  const response = await fetch(`${API_URL}/history`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!response.ok) throw new Error('Erro ao buscar histórico');
   
-  console.log("Token a ser enviado:", userStore.user.token ? "Presente" : "Faltando");
-  if (userStore.user.token) {
-      console.log("Primeiros 10 caracteres do token:", userStore.user.token.substring(0, 10) + "...");
-  }
+  const dtos: ChatMessageDTO[] = await response.json();
 
-  try {
-    const res = await axios.post(
-      "http://localhost:8001/responder",
-      { pergunta: message },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userStore.user.token}`,
-        },
-      }
-    );
+  return dtos.map(dto => ({
+    id: dto.id,
+    from: dto.sender === 'user' ? userName : 'Nutricionista',
+    message: dto.message,
+    timestamp: new Date(dto.timestamp) 
+  }));
+}
 
-    if (res.data.meal_saved) {
-      console.log("IA salvou uma refeição, atualizando a lista para HOJE...");
+export async function postNewMessage(message: string): Promise<ChatMessage> {
+  const token = localStorage.getItem('token');
+  const response = await fetch(`${API_URL}/send`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ message: message })
+  });
 
-      const today = new Date().toISOString().substr(0, 10);
+  if (!response.ok) throw new Error('Erro ao enviar mensagem');
+  
+  const dto: ChatMessageDTO = await response.json();
 
-      await mealStore.setDateAndFetch(today);
-    }
-
-    return res.data.resposta;
-
-  } catch (err) {
-    console.error("Erro ao enviar mensagem:", err);
-    return "Desculpe, ocorreu um erro ao processar sua mensagem.";
-  }
+  return {
+    id: dto.id,
+    from: 'Nutricionista',
+    message: dto.message,
+    timestamp: new Date(dto.timestamp)
+  };
 }
