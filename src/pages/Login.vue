@@ -1,8 +1,8 @@
 <template>
-  
+
   <div class="login-page" :class="{ dark: darkMode }">
     <!-- Toggle de tema -->
-     
+
     <button @click="toggleTheme" class="theme-btn" :title="darkMode ? 'Modo Claro' : 'Modo Escuro'">
       <ThemeToggle />
       <SunIcon v-if="darkMode" :size="18" />
@@ -58,7 +58,7 @@ interface LoginResponse {
   token: string;
   approved?: boolean;
 }
-
+  
 export default defineComponent({
   components: {
     SunIcon,
@@ -73,7 +73,6 @@ export default defineComponent({
     const loading = ref(false);
     const errorMessage = ref("");
 
-    // URL da sua API - ajuste conforme necessário
     const API_URL = "http://localhost:8080/api";
 
     const login = async () => {
@@ -97,66 +96,48 @@ export default defineComponent({
           }),
         });
 
-        // Verifica se a resposta está vazia
-        const contentLength = response.headers.get('content-length');
         const contentType = response.headers.get('content-type');
+        const isJson = contentType?.includes('application/json');
 
         if (!response.ok) {
-          // Se for status 403 (Forbidden) - usuário não aprovado
-          if (response.status === 403) {
-            throw new Error("Seu cadastro ainda não foi aprovado. Aguarde a aprovação do administrador.");
-          }
+          let errorMsg = "Email ou senha incorretos";
 
-          // Tenta obter mensagem de erro do backend
-          let errorMsg = "Erro ao fazer login";
-          try {
-            if (contentLength !== '0' && contentType?.includes('application/json')) {
+          // Tenta obter mensagem mais específica do backend
+          if (isJson) {
+            try {
               const errorData = await response.json();
               errorMsg = errorData.message || errorMsg;
-            }
-          } catch {
-            // Se não conseguir parsear JSON, usa mensagem padrão baseada no status
-            if (response.status === 401) {
-              errorMsg = "Email ou senha incorretos";
-            } else if (response.status === 403) {
-              errorMsg = "Acesso negado. Usuário não aprovado.";
-            } else {
-              errorMsg = `Erro ${response.status}: ${response.statusText}`;
+            } catch {
             }
           }
+
+          // Se a mensagem contém indicativos de "não aprovado", usa mensagem específica
+          if (errorMsg.toLowerCase().includes('aprovado') ||
+            errorMsg.toLowerCase().includes('approved') ||
+            errorMsg.toLowerCase().includes('aguarde') ||
+            response.status === 403) {
+            errorMsg = "Seu cadastro ainda não foi aprovado. Aguarde a aprovação do administrador.";
+          }
+
           throw new Error(errorMsg);
         }
-
-        // Processa resposta de sucesso
-        let userData: LoginResponse;
-
-        try {
-          if (contentLength === '0' || !contentType?.includes('application/json')) {
-            throw new Error("Resposta vazia do servidor");
-          }
-          userData = await response.json();
-        } catch (parseError) {
-          console.error("Erro ao parsear resposta:", parseError);
+        if (!isJson) {
           throw new Error("Resposta inválida do servidor");
         }
 
-        // Verifica se o usuário está aprovado (se o campo exists)
+        const userData: LoginResponse = await response.json();
+
         if (userData.approved === false) {
           throw new Error("Seu cadastro ainda não foi aprovado. Aguarde a aprovação do administrador.");
         }
 
-        // Adiciona propriedades faltantes com valores padrão
-        const completeUser = {
+        userStore.setUser({
           ...userData,
-          approved: userData.approved !== undefined ? userData.approved : true, // Assume true se não existir
+          approved: userData.approved !== undefined ? userData.approved : true,
           dietaryPreferences: userData.dietaryPreferences ?? [],
           restrictions: userData.restrictions ?? [],
-        };
+        });
 
-        // Salva o usuário na store
-        userStore.setUser(completeUser);
-
-        // Redireciona para dashboard
         router.push("/dashboard");
 
       } catch (error: any) {
@@ -167,10 +148,8 @@ export default defineComponent({
       }
     };
 
-    // Estado do dark mode
     const darkMode = ref(localStorage.getItem("theme") === "dark");
 
-    // Atualiza <html class="dark"> e salva no localStorage
     watch(darkMode, (val) => {
       if (val) {
         document.documentElement.classList.add("dark");
@@ -189,7 +168,6 @@ export default defineComponent({
     onMounted(() => {
       userStore.initUser();
 
-      // Se já estiver autenticado, redireciona para dashboard
       if (userStore.isAuthenticated) {
         router.push("/dashboard");
       }
@@ -221,7 +199,7 @@ export default defineComponent({
 }
 
 .login-page.dark {
-  background-color:#181818;
+  background-color: #181818;
   color: white;
 }
 
