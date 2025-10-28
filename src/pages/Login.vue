@@ -23,7 +23,13 @@
     <div v-if="loading" class="loading">Carregando...</div>
 
     <input v-model="email" placeholder="Email" type="email" />
-    <input v-model="password" type="password" placeholder="Senha" />
+
+    <div class="password-field">
+      <input :type="showPassword ? 'text' : 'password'" v-model="password" placeholder="Senha" />
+      <button type="button" class="eye-btn" @click="togglePassword">
+        <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+      </button>
+    </div>
 
     <button @click="login" :disabled="loading">
       {{ loading ? 'Entrando...' : 'Entrar' }}
@@ -58,7 +64,7 @@ interface LoginResponse {
   token: string;
   approved?: boolean;
 }
-  
+
 export default defineComponent({
   components: {
     SunIcon,
@@ -70,6 +76,12 @@ export default defineComponent({
 
     const email = ref("");
     const password = ref("");
+    const showPassword = ref(false)
+
+    function togglePassword() {
+      showPassword.value = !showPassword.value
+    }
+
     const loading = ref(false);
     const errorMessage = ref("");
 
@@ -148,6 +160,7 @@ export default defineComponent({
       }
     };
 
+
     const darkMode = ref(localStorage.getItem("theme") === "dark");
 
     watch(darkMode, (val) => {
@@ -176,6 +189,8 @@ export default defineComponent({
     return {
       email,
       password,
+      showPassword,
+      togglePassword,
       login,
       darkMode,
       toggleTheme,
@@ -283,6 +298,27 @@ button:disabled {
   background-color: #322;
   border-color: #633;
   color: #f99;
+}
+
+.password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-field input {
+  width: 100%;
+  padding-right: 40px;
+}
+
+.eye-btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #555;
+  font-size: 18px;
 }
 
 /* Loading */
