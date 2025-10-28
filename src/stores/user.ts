@@ -2,8 +2,9 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import type { User } from '../types/user'
+import { fetchChatHistory } from '@/api/chatApi' 
 
-// Interface para mensagens do chat
+
 export interface ChatMessage {
   id: number
   from: string
@@ -16,16 +17,13 @@ export const useUserStore = defineStore('user', () => {
   
   const user = ref<User | null>(null)
   const pendingApprovals = ref(0)
-  const chatHistory = ref<ChatMessage[]>([])
+  const chatHistory = ref<ChatMessage[]>([]) 
 
   const isAuthenticated = computed(() => !!user.value)
 
   const setUser = (userData: User) => {
     user.value = userData
-    // Se o usuário tem histórico de chat, carrega
-    if (userData.chatHistory) {
-      chatHistory.value = userData.chatHistory
-    }
+    
     localStorage.setItem('user', JSON.stringify(userData))
     localStorage.setItem('token', userData.token)
   }
@@ -33,21 +31,36 @@ export const useUserStore = defineStore('user', () => {
   const clearUser = () => {
     user.value = null
     pendingApprovals.value = 0
-    chatHistory.value = []
+    chatHistory.value = [] 
     localStorage.removeItem('user')
     localStorage.removeItem('token')
   }
 
-  const initUser = () => {
+  
+  const initUser = async () => {
     const savedUser = localStorage.getItem('user')
     const savedToken = localStorage.getItem('token')
 
     if (savedUser && savedToken) {
       const userData = JSON.parse(savedUser)
       user.value = userData
-      if (userData.chatHistory) {
-        chatHistory.value = userData.chatHistory
-      }
+      
+      
+      await loadChatHistory();
+    }
+  }
+  
+  
+  const loadChatHistory = async () => {
+    if (!isAuthenticated.value) return;
+    try {
+      console.log("Carregando histórico de chat do backend...");
+      const history = await fetchChatHistory();
+      chatHistory.value = history;
+      console.log("Histórico carregado:", history.length, "mensagens.");
+    } catch (error) {
+      console.error("Erro ao carregar histórico de chat:", error);
+      chatHistory.value = []; 
     }
   }
 
@@ -60,25 +73,17 @@ export const useUserStore = defineStore('user', () => {
     pendingApprovals.value = count
   }
 
-  // Funções para o chat
+  
   const addChatMessage = (message: ChatMessage) => {
     chatHistory.value.push(message)
     
-    // Atualiza o localStorage
-    if (user.value) {
-      user.value.chatHistory = chatHistory.value
-      localStorage.setItem('user', JSON.stringify(user.value))
-    }
   }
 
-  const clearChatHistory = () => {
-    chatHistory.value = []
+  const clearChatHistory = async () => {
     
-    // Atualiza o localStorage
-    if (user.value) {
-      user.value.chatHistory = []
-      localStorage.setItem('user', JSON.stringify(user.value))
-    }
+    chatHistory.value = [] 
+    console.log("Histórico de chat local limpo.");
+    
   }
 
   return {
@@ -88,10 +93,11 @@ export const useUserStore = defineStore('user', () => {
     isAuthenticated,
     setUser,
     clearUser,
-    initUser,
+    initUser, 
     logout,
     setPendingApprovals,
     addChatMessage,
-    clearChatHistory
+    clearChatHistory,
+    loadChatHistory 
   }
 })
