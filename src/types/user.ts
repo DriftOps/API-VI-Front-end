@@ -35,6 +35,7 @@ export interface User {
   weight?: number
   height?: number
   birthDate?: string
+  gender?: string;
   dietaryPreferences: string[]
   restrictions: string[]
   plan?: string

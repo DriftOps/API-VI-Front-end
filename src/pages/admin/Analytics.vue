@@ -1,186 +1,185 @@
 <template>
-  <div class="analytics-page">
-    <div class="page-header">
-      <h2>Analytics</h2>
-      <p>Métricas e insights do sistema</p>
-    </div>
-
-    <!-- Filtros -->
-    <div class="filters-section">
-      <div class="filter-group">
-        <label>Período:</label>
-        <select v-model="selectedPeriod" @change="loadAnalyticsData">
-          <option value="7">Últimos 7 dias</option>
-          <option value="30">Últimos 30 dias</option>
-          <option value="90">Últimos 3 meses</option>
-        </select>
+  <DashboardLayout>
+    <div class="analytics-page">
+      <div class="page-header">
+        <h2>Analytics</h2>
+        <p>Métricas e insights do sistema</p>
       </div>
-      <div class="filter-group">
-        <label>Métrica:</label>
-        <select v-model="selectedMetric">
-          <option value="users">Usuários</option>
-          <option value="activity">Atividade</option>
-          <option value="growth">Crescimento</option>
-        </select>
-      </div>
-    </div>
 
-    <!-- Cards de Estatísticas -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon">👥</div>
-        <div class="stat-content">
-          <div class="stat-value">{{ analyticsData.totalUsers }}</div>
-          <div class="stat-label">Total de Usuários</div>
-          <div class="stat-trend" :class="getTrendClass(analyticsData.userGrowth)">
-            {{ analyticsData.userGrowth }}%
+      <!-- Filtros -->
+      <div class="filters-section">
+        <div class="filter-group">
+          <label>Período:</label>
+          <select v-model="selectedPeriod" @change="loadAnalyticsData">
+            <option value="7">Últimos 7 dias</option>
+            <option value="30">Últimos 30 dias</option>
+            <option value="90">Últimos 3 meses</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Métrica:</label>
+          <select v-model="selectedMetric">
+            <option value="users">Usuários</option>
+            <option value="activity">Atividade</option>
+            <option value="growth">Crescimento</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Cards de Estatísticas -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">👥</div>
+          <div class="stat-content">
+            <div class="stat-value">{{ analyticsData.totalUsers }}</div>
+            <div class="stat-label">Total de Usuários</div>
+            <div class="stat-trend" :class="getTrendClass(analyticsData.userGrowth)">
+              {{ analyticsData.userGrowth }}%
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">✅</div>
+          <div class="stat-content">
+            <div class="stat-value">{{ analyticsData.approvedUsers }}</div>
+            <div class="stat-label">Usuários Aprovados</div>
+            <div class="stat-trend" :class="getTrendClass(analyticsData.approvalRate)">
+              {{ analyticsData.approvalRate }}%
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">⏳</div>
+          <div class="stat-content">
+            <div class="stat-value">{{ analyticsData.pendingUsers }}</div>
+            <div class="stat-label">Aguardando Aprovação</div>
+            <div class="stat-badge pending">{{ analyticsData.pendingUsers }}</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">📈</div>
+          <div class="stat-content">
+            <div class="stat-value">{{ analyticsData.activeUsers }}</div>
+            <div class="stat-label">Usuários Ativos</div>
+            <div class="stat-trend" :class="getTrendClass(analyticsData.activityGrowth)">
+              {{ analyticsData.activityGrowth }}%
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="stat-card">
-        <div class="stat-icon">✅</div>
-        <div class="stat-content">
-          <div class="stat-value">{{ analyticsData.approvedUsers }}</div>
-          <div class="stat-label">Usuários Aprovados</div>
-          <div class="stat-trend" :class="getTrendClass(analyticsData.approvalRate)">
-            {{ analyticsData.approvalRate }}%
+      <!-- Gráficos e Visualizações -->
+      <div class="charts-grid">
+        <!-- Gráfico de Registro de Usuários -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>Registro de Usuários</h3>
+            <span class="chart-subtitle">Últimos {{ selectedPeriod }} dias</span>
           </div>
-        </div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-icon">⏳</div>
-        <div class="stat-content">
-          <div class="stat-value">{{ analyticsData.pendingUsers }}</div>
-          <div class="stat-label">Aguardando Aprovação</div>
-          <div class="stat-badge pending">{{ analyticsData.pendingUsers }}</div>
-        </div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-icon">📈</div>
-        <div class="stat-content">
-          <div class="stat-value">{{ analyticsData.activeUsers }}</div>
-          <div class="stat-label">Usuários Ativos</div>
-          <div class="stat-trend" :class="getTrendClass(analyticsData.activityGrowth)">
-            {{ analyticsData.activityGrowth }}%
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Gráficos e Visualizações -->
-    <div class="charts-grid">
-      <!-- Gráfico de Registro de Usuários -->
-      <div class="chart-card">
-        <div class="chart-header">
-          <h3>Registro de Usuários</h3>
-          <span class="chart-subtitle">Últimos {{ selectedPeriod }} dias</span>
-        </div>
-        <div class="chart-container">
-          <div v-if="loading" class="chart-loading">Carregando gráfico...</div>
-          <div v-else class="chart-placeholder">
-            <!-- Aqui você pode integrar Chart.js, ApexCharts, etc -->
-            <div class="bar-chart">
-              <div v-for="(item, index) in userRegistrationData" :key="index" class="bar-item">
-                <div class="bar-label">{{ item.label }}</div>
-                <div class="bar-track">
-                  <div 
-                    class="bar-fill" 
-                    :style="{ height: item.value + '%' }"
-                    :class="{ 'current-day': item.isToday }"
-                  ></div>
+          <div class="chart-container">
+            <div v-if="loading" class="chart-loading">Carregando gráfico...</div>
+            <div v-else class="chart-placeholder">
+              <!-- Aqui você pode integrar Chart.js, ApexCharts, etc -->
+              <div class="bar-chart">
+                <div v-for="(item, index) in userRegistrationData" :key="index" class="bar-item">
+                  <div class="bar-label">{{ item.label }}</div>
+                  <div class="bar-track">
+                    <div class="bar-fill" :style="{ height: item.value + '%' }"
+                      :class="{ 'current-day': item.isToday }"></div>
+                  </div>
+                  <div class="bar-value">{{ item.count }}</div>
                 </div>
-                <div class="bar-value">{{ item.count }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Distribuição por Role -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>Distribuição por Cargo</h3>
+          </div>
+          <div class="chart-container">
+            <div class="pie-chart-placeholder">
+              <div v-for="role in roleDistribution" :key="role.name" class="pie-item">
+                <div class="pie-color" :style="{ backgroundColor: role.color }"></div>
+                <div class="pie-label">{{ role.name }}</div>
+                <div class="pie-value">{{ role.count }} ({{ role.percentage }}%)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Atividade Recente -->
+        <div class="chart-card full-width">
+          <div class="chart-header">
+            <h3>Atividade Recente</h3>
+          </div>
+          <div class="activity-list">
+            <div v-if="recentActivity.length === 0" class="empty-activity">
+              Nenhuma atividade recente
+            </div>
+            <div v-else>
+              <div v-for="activity in recentActivity" :key="activity.id" class="activity-item">
+                <div class="activity-icon" :class="activity.type">
+                  {{ getActivityIcon(activity.type) }}
+                </div>
+                <div class="activity-content">
+                  <div class="activity-message">{{ activity.message }}</div>
+                  <div class="activity-time">{{ formatTime(activity.timestamp) }}</div>
+                </div>
+                <div class="activity-user">{{ activity.user }}</div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Distribuição por Role -->
-      <div class="chart-card">
-        <div class="chart-header">
-          <h3>Distribuição por Cargo</h3>
-        </div>
-        <div class="chart-container">
-          <div class="pie-chart-placeholder">
-            <div v-for="role in roleDistribution" :key="role.name" class="pie-item">
-              <div class="pie-color" :style="{ backgroundColor: role.color }"></div>
-              <div class="pie-label">{{ role.name }}</div>
-              <div class="pie-value">{{ role.count }} ({{ role.percentage }}%)</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Atividade Recente -->
-      <div class="chart-card full-width">
-        <div class="chart-header">
-          <h3>Atividade Recente</h3>
-        </div>
-        <div class="activity-list">
-          <div v-if="recentActivity.length === 0" class="empty-activity">
-            Nenhuma atividade recente
-          </div>
-          <div v-else>
-            <div v-for="activity in recentActivity" :key="activity.id" class="activity-item">
-              <div class="activity-icon" :class="activity.type">
-                {{ getActivityIcon(activity.type) }}
-              </div>
-              <div class="activity-content">
-                <div class="activity-message">{{ activity.message }}</div>
-                <div class="activity-time">{{ formatTime(activity.timestamp) }}</div>
-              </div>
-              <div class="activity-user">{{ activity.user }}</div>
-            </div>
-          </div>
+      <!-- Tabela de Métricas Detalhadas -->
+      <div class="metrics-table-section">
+        <h3>Métricas Detalhadas</h3>
+        <div class="metrics-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Métrica</th>
+                <th>Valor Atual</th>
+                <th>Variação</th>
+                <th>Status</th>
+                <th>Tendência</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Taxa de Aprovação</td>
+                <td>{{ analyticsData.approvalRate }}%</td>
+                <td :class="getVariationClass(5)">+5%</td>
+                <td><span class="status-badge positive">Positivo</span></td>
+                <td>📈</td>
+              </tr>
+              <tr>
+                <td>Novos Usuários (7d)</td>
+                <td>{{ analyticsData.newUsers }}</td>
+                <td :class="getVariationClass(2)">+2</td>
+                <td><span class="status-badge stable">Estável</span></td>
+                <td>→</td>
+              </tr>
+              <tr>
+                <td>Usuários Ativos</td>
+                <td>{{ analyticsData.activeUsers }}</td>
+                <td :class="getVariationClass(8)">+8%</td>
+                <td><span class="status-badge positive">Positivo</span></td>
+                <td>📈</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
-
-    <!-- Tabela de Métricas Detalhadas -->
-    <div class="metrics-table-section">
-      <h3>Métricas Detalhadas</h3>
-      <div class="metrics-table">
-        <table>
-          <thead>
-            <tr>
-              <th>Métrica</th>
-              <th>Valor Atual</th>
-              <th>Variação</th>
-              <th>Status</th>
-              <th>Tendência</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Taxa de Aprovação</td>
-              <td>{{ analyticsData.approvalRate }}%</td>
-              <td :class="getVariationClass(5)">+5%</td>
-              <td><span class="status-badge positive">Positivo</span></td>
-              <td>📈</td>
-            </tr>
-            <tr>
-              <td>Novos Usuários (7d)</td>
-              <td>{{ analyticsData.newUsers }}</td>
-              <td :class="getVariationClass(2)">+2</td>
-              <td><span class="status-badge stable">Estável</span></td>
-              <td>→</td>
-            </tr>
-            <tr>
-              <td>Usuários Ativos</td>
-              <td>{{ analyticsData.activeUsers }}</td>
-              <td :class="getVariationClass(8)">+8%</td>
-              <td><span class="status-badge positive">Positivo</span></td>
-              <td>📈</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
+  </DashboardLayout>
 </template>
 
 <script lang="ts">
@@ -218,7 +217,7 @@ export default defineComponent({
     const selectedPeriod = ref('7');
     const selectedMetric = ref('users');
     const loading = ref(false);
-    
+
     const analyticsData = ref<AnalyticsData>({
       totalUsers: 0,
       approvedUsers: 0,
@@ -239,7 +238,7 @@ export default defineComponent({
       try {
         // Simulação de dados - substitua por chamada real à API
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
+
         analyticsData.value = {
           totalUsers: 154,
           approvedUsers: 142,
@@ -719,11 +718,11 @@ export default defineComponent({
   .charts-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .filters-section {
     flex-direction: column;
   }

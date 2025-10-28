@@ -25,11 +25,13 @@
     "pinia": "^3.0.3",
     "vue": "^3.5.18",
     "vue-chartjs": "^5.3.2",
-    "vue-router": "^4.5.1",
+    "vue-router": "^4.6.3",
     "vue3-lottie": "^3.3.1"
   },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.2",
+    "@types/chart.js": "^2.9.41",
+    "@types/markdown-it": "^14.1.2",
     "@types/node": "^22.16.5",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/eslint-config-prettier": "^10.2.0",
