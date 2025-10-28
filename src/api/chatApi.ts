@@ -30,7 +30,9 @@ export async function fetchChatHistory(): Promise<ChatMessage[]> {
     id: dto.id,
     from: dto.sender === 'user' ? userName : 'Nutricionista',
     message: dto.message,
-    timestamp: new Date(dto.timestamp) 
+    timestamp: new Date(dto.timestamp),
+    nutritionistComment: dto.nutritionistComment, 
+    feedback: dto.userFeedback || null        
   }));
 }
 
@@ -53,9 +55,11 @@ export async function postNewMessage(message: string): Promise<ChatMessage> {
 
   return {
     id: dto.id,
-    from: 'Nutricionista',
+    from: 'NutriX', // Padronizado para 'NutriX'
     message: dto.message,
-    timestamp: new Date(dto.timestamp)
+    timestamp: new Date(dto.timestamp),
+    nutritionistComment: dto.nutritionistComment, // <-- ADICIONADO (será null)
+    feedback: dto.userFeedback || null         // <-- ADICIONADO (será null)
   };
 }
 

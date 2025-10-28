@@ -185,11 +185,15 @@
   </script>
   
   <style scoped>
- .supervision-container {
-  display: flex;
-  height: 100%; 
-  background: var(--color-background);
-}
+  .supervision-container {
+    display: flex;
+    flex-direction: row;
+    height: 100vh; /* ocupa a altura total do viewport */
+    width: 165%;
+    margin-left: -60px;
+    background: var(--color-background);
+    overflow: hidden; /* impede scroll duplo */
+  }
   
   /* Painel da Esquerda (Clientes) */
   .client-list-panel {
@@ -198,24 +202,26 @@
     display: flex;
     flex-direction: column;
     background: var(--card-bg);
+    overflow: hidden;
   }
   
   .panel-header {
     padding: 16px;
     border-bottom: 1px solid var(--card-border);
-    width: 85vh;
+    flex-shrink: 0;
   }
   .panel-header h2 {
     margin: 0 0 12px 0;
     font-size: 1.1em;
   }
   .panel-header input {
-    width: 50%;
+    width: 100%;
     padding: 8px 12px;
     border-radius: 6px;
     border: 1px solid var(--card-border);
     background: var(--input-bg);
     color: var(--input-text);
+    box-sizing: border-box;
   }
   
   .client-list {
@@ -253,6 +259,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
   
   .messages-container {
@@ -270,8 +277,6 @@
     border-radius: 12px;
     max-width: 70%;
     line-height: 1.5;
-    /* Força o texto a ser escuro, corrigindo legibilidade no modo escuro.
-    */
     color: #1f2937;
   }
   .sender-label {
@@ -299,27 +304,28 @@
     border-bottom-right-radius: 4px;
   }
   .ai-msg {
-    background: #eef2ff; /* Fundo azul claro para AI */
+    background: #eef2ff;
     border: 1px solid #c7d2fe;
     margin-left: 0;
     border-bottom-left-radius: 4px;
   }
   
+  /* Comentários */
   .comment-wrapper {
     max-width: 65%;
-    margin-left: 5%; /* Indentação para o comentário */
+    margin-left: 5%;
     margin-top: 8px;
   }
   .comment-bubble {
-    background: #fefce8; /* Fundo amarelo claro para Comentário */
-    border: 1px solid #fde047;
+    background: #ffffff;
+    border: 1px solid #3c09b4;
     border-radius: 8px;
     padding: 10px 14px;
-    /* Força o texto a ser escuro, corrigindo legibilidade no modo escuro.
-    */
     color: #1f2937;
   }
-  .comment-bubble p { margin: 0; }
+  .comment-bubble p {
+    margin: 0;
+  }
   
   .comment-btn-add {
     font-size: 0.8em;
@@ -328,23 +334,33 @@
     background: none;
     cursor: pointer;
     border-radius: 4px;
-    /* Adicionado para herdar a cor do texto do tema */
     color: var(--color-text);
     opacity: 0.7;
   }
   .comment-btn-add:hover {
     opacity: 1;
     background: var(--input-bg);
-  }
-  .comment-btn-edit {
-    font-size: 0.8em;
-    padding: 2px 6px;
-    border: none;
-    background: none;
-    color: var(--primary-color);
-    cursor: pointer;
-    float: right;
-  }
+  }.comment-btn-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8em;
+  font-weight: 600;
+  padding: 4px 10px;
+  margin-top: 6px;
+  border: 1px solid var(--primary-color);
+  border-radius: 6px;
+  background-color: rgba(60, 9, 180, 0.1);
+  color: var(--primary-color);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.comment-btn-edit:hover {
+  background-color: var(--primary-color);
+  color: white;
+  transform: scale(1.03);
+}
   
   .comment-editor {
     background: var(--card-bg);
@@ -368,15 +384,24 @@
     margin-top: 8px;
   }
   
-  .btn-primary, .btn-secondary {
+  .btn-primary,
+  .btn-secondary {
     padding: 6px 12px;
     border-radius: 6px;
     border: none;
     font-weight: 600;
     cursor: pointer;
   }
-  .btn-primary { background-color: var(--primary-color); color: white; }
-  .btn-primary:disabled { opacity: 0.5; }
-  .btn-secondary { background-color: var(--card-border); color: var(--color-text); }
-  
+  .btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+  }
+  .btn-primary:disabled {
+    opacity: 0.5;
+  }
+  .btn-secondary {
+    background-color: var(--card-border);
+    color: var(--color-text);
+  }
   </style>
+  

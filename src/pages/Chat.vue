@@ -7,7 +7,7 @@
             <UserIcon :size="24" />
           </div>
           <div class="chat-details">
-            <h2>Chat com Nutricionista</h2>
+            <h2>Chat com NutriX</h2>
             <div class="status">
               <div class="status-indicator" :class="{ online: isNutritionistOnline }"></div>
               <span>{{ isNutritionistOnline ? 'Online' : 'Offline' }}</span>
@@ -18,10 +18,6 @@
         <div class="chat-actions">
           <button @click="clearChat" class="action-btn" title="Limpar conversa">
             <Trash2Icon :size="18" />
-          </button>
-          <button @click="toggleSound" class="action-btn" :title="soundEnabled ? 'Desativar som' : 'Ativar som'">
-            <BellIcon v-if="soundEnabled" :size="18" />
-            <BellOffIcon v-else :size="18" />
           </button>
         </div>
       </div>
@@ -60,10 +56,18 @@
               <span class="message-sender">{{ message.from }}</span>
               <span class="message-time">{{ formatTime(message.timestamp) }}</span>
             </div>
+            
             <div class="message-content" v-html="renderMarkdown(message.message)"></div>
-            <!-- Feedback -->
+
+            <div v-if="message.nutritionistComment" class="nutritionist-comment-bubble">
+              <strong class="comment-sender-label">
+                <UserCheckIcon :size="14" /> 
+                Nota do Nutricionista:
+              </strong>
+              <p>{{ message.nutritionistComment }}</p> 
+            </div>
             <div 
-              v-if="message.from === 'Nutricionista'" 
+              v-if="message.from === 'NutriX'" 
               class="feedback-buttons"
             >
               <button 
@@ -149,7 +153,7 @@ import MarkdownIt from "markdown-it";
 // Ícones
 import {
   User as UserIcon,
-  UserCheck as UserCheckIcon,
+  UserCheck as UserCheckIcon, // <-- ÍCONE ADICIONADO
   Send as SendIcon,
   Loader as LoaderIcon,
   Trash2 as Trash2Icon,
@@ -162,15 +166,6 @@ import {
   ThumbsDown as ThumbsDownIcon    
 } from 'lucide-vue-next'
 
-interface ChatMessage {
-  id: number
-  from: string
-  message: string
-  timestamp: Date
-  type?: 'text' | 'system'
-  feedback?: 'positive' | 'negative' | null
-}
-
 // Reutiliza a interface do store para consistência
 import type { ChatMessage } from '@/stores/user';
 
@@ -179,7 +174,7 @@ export default defineComponent({
   components: {
     DashboardLayout,
     UserIcon,
-    UserCheckIcon,
+    UserCheckIcon, // <-- ÍCONE ADICIONADO
     SendIcon,
     LoaderIcon,
     Trash2Icon,
@@ -190,8 +185,6 @@ export default defineComponent({
     CopyIcon,
     ThumbsUpIcon,
     ThumbsDownIcon,
-    DashboardLayout, UserIcon, UserCheckIcon, SendIcon, LoaderIcon,
-    Trash2Icon, BellIcon, BellOffIcon, SmileIcon, PaperclipIcon, CopyIcon
   },
   setup() {
     const userStore = useUserStore();
@@ -242,16 +235,13 @@ export default defineComponent({
 
       try {
         // 2. Chama o BACKEND JAVA (que por sua vez chama o Python)
+        // A API (chatApi.ts) já foi atualizada para trazer a resposta completa
         const botMessage = await postNewMessage(userMessageText);
 
         isTyping.value = false; // Esconde "digitando..."
 
         // 3. Adiciona a resposta da AI (recebida do Java) à UI
-        // O `from` já vem como 'Nutricionista' da conversão no chatApi.ts
         userStore.addChatMessage(botMessage);
-
-        // A lógica de `meal_saved` foi MOVIDA para o backend Java (ChatService)
-        // Não precisamos mais do `useMealStore` aqui para isso.
 
         if (soundEnabled.value) playNotificationSound();
 
@@ -279,10 +269,7 @@ export default defineComponent({
 
     const clearChat = () => {
       if (confirm('Tem certeza que deseja limpar todo o histórico desta conversa? Esta ação não pode ser desfeita.')) {
-        // Chama a ação do store (que DEVERIA chamar um endpoint no backend para limpar o DB)
         userStore.clearChatHistory();
-        // O backend idealmente responderia com sucesso, e o frontend atualizaria
-        // Por enquanto, apenas limpa localmente
       }
     };
 
@@ -290,33 +277,24 @@ export default defineComponent({
       const msg = userStore.chatHistory.find(m => m.id === messageId);
       if (!msg) return;
 
-      // 1. Determina o novo estado
       const newFeedback = msg.feedback === type ? null : type;
-
-      // 2. Salva o estado *anterior* para reverter em caso de erro
       const oldFeedback = msg.feedback;
       
-      // 3. Atualização Otimista (Muda a UI imediatamente)
-      msg.feedback = newFeedback;
+      msg.feedback = newFeedback; // Atualização Otimista
 
       try {
-        // 4. Chama a API
         await postFeedback(messageId, newFeedback);
-        // Sucesso: a UI já está atualizada.
       } catch (error) {
         console.error("Falha ao salvar feedback, revertendo:", error);
-        // 5. Reverte a UI em caso de falha
-        msg.feedback = oldFeedback; 
-        // (Opcional: mostrar um toast/alerta de erro para o usuário)
+        msg.feedback = oldFeedback; // Reverte
       }
     };
 
     // --- FUNÇÕES AUXILIARES ---
 
     const formatTime = (timestamp: Date | string) => {
-      // Garante que temos um objeto Date
       const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
-      if (isNaN(date.getTime())) return ''; // Retorna vazio se a data for inválida
+      if (isNaN(date.getTime())) return '';
       return date.toLocaleTimeString('pt-BR', {
         hour: '2-digit',
         minute: '2-digit'
@@ -327,11 +305,11 @@ export default defineComponent({
     const toggleEmojiPicker = () => showEmojiPicker.value = !showEmojiPicker.value;
     const addEmoji = (emoji: string) => { newMessage.value += emoji; messageInput.value?.focus(); };
     const attachFile = () => alert('Funcionalidade de anexar arquivo ainda não implementada.');
-    const copyMessage = (text: string) => navigator.clipboard.writeText(text).then(() => { /* Opcional: mostrar feedback */ });
+    const copyMessage = (text: string) => navigator.clipboard.writeText(text);
 
     const playNotificationSound = () => {
       try {
-        const audio = new Audio('/notification.wav'); // Use um arquivo local se tiver
+        const audio = new Audio('/notification.wav'); 
         audio.volume = 0.3;
         audio.play().catch(e => console.warn("Erro ao tocar som:", e));
       } catch (e) { console.warn("Erro ao criar áudio:", e) }
@@ -355,30 +333,24 @@ export default defineComponent({
     onMounted(async () => {
       isLoadingHistory.value = true;
       try {
-        // O initUser (no App.vue ou main.ts) já deve ter chamado loadChatHistory.
-        // Se o histórico ainda estiver vazio, tentamos carregar de novo.
         if (userStore.isAuthenticated && userStore.chatHistory.length === 0) {
-          console.log("Chat.vue mounted: Histórico vazio, tentando carregar...");
           await userStore.loadChatHistory();
         }
       } catch (error) {
         console.error("Erro no onMounted ao carregar histórico:", error);
       } finally {
         isLoadingHistory.value = false;
-        await nextTick(() => scrollToBottom()); // Rola após carregar
+        await nextTick(() => scrollToBottom());
       }
 
       document.addEventListener('click', handleClickOutside);
-      // Simula status online (pode ser substituído por WebSocket ou polling)
       isNutritionistOnline.value = Math.random() > 0.3;
     });
 
-    // Rola para baixo sempre que o histórico de chat mudar
     watch(chatHistory, async () => {
       await nextTick(() => scrollToBottom());
     }, { deep: true });
 
-    // Limpa o listener ao desmontar
     watch(() => userStore.isAuthenticated, (isAuth) => {
       if (!isAuth) {
         document.removeEventListener('click', handleClickOutside);
@@ -422,7 +394,6 @@ export default defineComponent({
   flex-direction: column;
   height: calc(100vh - 10px);
   width: 69vw;
-  /* max-width: 100%; */
   margin: 0;
   background: var(--card-bg);
   border-radius: 0;
@@ -910,6 +881,38 @@ export default defineComponent({
   background: var(--primary-color);
   color: white;
   border-color: var(--primary-color);
+}
+
+/* --- ESTILOS ADICIONADOS PARA COMENTÁRIO DO NUTRICIONISTA --- */
+
+.nutritionist-comment-bubble {
+  background: #ffffff; /* Fundo amarelo claro (igual da supervisão) */
+  border: 1px solid #4759fd;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-top: 8px;
+  max-width: 95%; 
+  color: #1f2937; /* Força texto escuro para legibilidade */
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.other-message .nutritionist-comment-bubble {
+  border-bottom-left-radius: 4px;
+}
+
+.comment-sender-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8em;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: #3c09b4; /* Tom de marrom/laranja */
+}
+
+.nutritionist-comment-bubble p {
+  margin: 0;
 }
 
 </style>
