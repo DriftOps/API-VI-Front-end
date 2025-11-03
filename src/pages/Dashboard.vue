@@ -15,6 +15,7 @@
       <div class="content-area">
         <div v-if="loading" class="loading">Carregando...</div>
         <div v-if="error" class="error-message">{{ error }}</div>
+        <div v-if="success" class="success-message">{{ success }}</div>
 
         <div v-else class="user-cards">
           <div class="card">
@@ -211,6 +212,7 @@ export default defineComponent({
     const loading = ref(true);
     const saving = ref(false);
     const error = ref("");
+    const success = ref("");
 
     // --- Listas de Opções para os Selects ---
     const medicalConditionsOptions = ref([
@@ -288,6 +290,7 @@ export default defineComponent({
       try {
         saving.value = true;
         error.value = "";
+        success.value = "";
 
         // ✅ CORREÇÃO: Construir o payload manualmente para garantir a tipagem correta
         const payload: UserUpdateDTO = {
@@ -315,6 +318,8 @@ export default defineComponent({
 
         await updateUser(payload);
         await loadData(); // Recarrega para confirmar as alterações
+
+        success.value = "Dados atualizados com sucesso!";
 
       } catch (err) {
         error.value = "Erro ao salvar as alterações.";
@@ -354,7 +359,7 @@ export default defineComponent({
     onMounted(loadData);
 
     return {
-      user, userData, loading, saving, error, currentPageTitle,
+      user, userData, loading, saving, success, error, currentPageTitle,
       medicalConditionsOptions, allergiesOptions, surgeriesOptions,
       calculateAge, imc, imcCategory, saveUser, resetForm,
     };
@@ -390,7 +395,32 @@ select:not([multiple]) { appearance: none; background-image: url("data:image/svg
 .age-text, .imc-details { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--color-text); margin-top: 8px; }
 .imc { font-size: 28px; font-weight: bold; margin: 8px 0; }
 .imc-category { font-size: 14px; opacity: 0.9; }
-.loading, .error-message { text-align: center; padding: 60px 20px; font-size: 16px; }
+.loading { 
+  text-align: center; 
+  padding: 60px 20px; 
+  font-size: 16px; 
+}
+
+.error-message, .success-message {
+  text-align: center;
+  font-size: 16px;
+  padding: 16px; 
+  border-radius: 8px;
+  margin-bottom: 20px; 
+}
+
+.error-message { 
+  background: var(--error-bg); 
+  border: 1px solid var(--error-border); 
+  color: var(--error-text); 
+}
+
+
+.success-message {
+  background: #dff0d8; 
+  border: 1px solid #c3e6cb; 
+  color: #155724; 
+}
 .error-message { background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text); border-radius: 8px; }
 
 /* ESTILOS PARA O SELECT MÚLTIPLO */
