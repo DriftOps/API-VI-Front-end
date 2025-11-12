@@ -75,6 +75,12 @@ const routes = [
     meta: { requiresAuth: true}
   },
   {
+    path: '/diet',
+    name: 'Dietas',
+    component: () => import('@/pages/Diet.vue'),
+    meta: { requiresAuth: true } 
+  },
+  {
     path: '/supervision',
     name: 'Supervisão',
     component: () => import('@/pages/nutritionist/Supervision.vue'),
