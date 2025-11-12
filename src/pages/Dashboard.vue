@@ -578,10 +578,13 @@ select[multiple] option:checked {
   background: #6366f1; 
   color: white;
   border: none;
+  margin-top: 30px;
+  height: 50%;
   border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   font-weight: 600;
   font-size: 14px;
