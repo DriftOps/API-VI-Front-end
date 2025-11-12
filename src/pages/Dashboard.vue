@@ -70,7 +70,7 @@
             <label class="card-label"><TimerIcon :size="16" /> Minutos por Dia</label>
             <input type="number" v-model.number="userData.activityMinutesPerDay" placeholder="Ex: 60" />
           </div>
-          <div class="card highlight">
+          <div class="card highlight" ref="imcCardRef">
             <label class="card-label"><HeartPulseIcon :size="16" /> IMC</label>
             <p class="imc">{{ imc }} <span class="imc-category">({{ imcCategory }})</span></p>
           </div>
@@ -162,6 +162,24 @@
              </select>
           </div>
 
+          <button @click="openExportModal" class="export-btn">
+            <DownloadIcon :size="18" />
+            Exportar PDF
+          </button>
+
+      <div v-if="showExportModal" class="modal-overlay" @click.self="closeExportModal">
+      <div class="modal-content">
+        <h4>Confirmar Exportação</h4>
+        <p>Deseja realmente gerar o PDF com o resumo do seu progresso nutricional?</p>
+        <div class="modal-actions">
+          <button @click="closeExportModal" class="reset-btn">Cancelar</button>
+          <button @click="handleConfirmExport" class="save-btn" :disabled="exportingPdf">
+            {{ exportingPdf ? 'Gerando...' : 'Confirmar e Baixar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
           <div class="card actions">
             <button @click="saveUser" :disabled="saving" class="save-btn">
               <SaveIcon v-if="!saving" :size="18" />
@@ -191,8 +209,10 @@ import {
   HeartPulse as HeartPulseIcon, Save as SaveIcon, RotateCcw as RotateCcwIcon,
   Stethoscope as StethoscopeIcon, Siren as SirenIcon, Scissors as ScissorsIcon, Bed as BedIcon,
   Moon as MoonIcon, Wind as WindIcon, GlassWater as GlassWaterIcon, Wine as WineIcon,
-  Cigarette as CigaretteIcon, Pill as PillIcon, Repeat as RepeatIcon, Timer as TimerIcon
+  Cigarette as CigaretteIcon, Pill as PillIcon, Repeat as RepeatIcon, Timer as TimerIcon, Download as DownloadIcon
 } from 'lucide-vue-next';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 // Função auxiliar para converter string em array e vice-versa
 const stringToArray = (str: string | undefined | null): string[] => str ? str.split(';').map(item => item.trim()).filter(Boolean) : [];
@@ -204,7 +224,7 @@ export default defineComponent({
     DashboardLayout, BarChart3Icon, TargetIcon, ScaleIcon, RulerIcon, CalendarIcon, CalendarDaysIcon,
     ActivityIcon, HeartPulseIcon, SaveIcon, RotateCcwIcon, StethoscopeIcon, SirenIcon,
     ScissorsIcon, BedIcon, MoonIcon, WindIcon, GlassWaterIcon, WineIcon, CigaretteIcon, PillIcon,
-    RepeatIcon, TimerIcon
+    RepeatIcon, TimerIcon, DownloadIcon
   },
   setup() {
     const route = useRoute();
@@ -246,6 +266,10 @@ export default defineComponent({
       hydrationLevel: "",
       continuousMedication: undefined as boolean | undefined,
     });
+
+    const showExportModal = ref(false);
+    const exportingPdf = ref(false);
+    const imcCardRef = ref<HTMLElement | null>(null);
     
     const user = computed(() => userStore.user);
     const pageTitles: Record<string, string> = { '/dashboard': 'Meu Painel Nutricional' };
@@ -358,10 +382,116 @@ export default defineComponent({
     const resetForm = () => loadData();
     onMounted(loadData);
 
+    const openExportModal = () => {
+      showExportModal.value = true;
+    };
+
+    const closeExportModal = () => {
+      showExportModal.value = false;
+    };
+
+    /**
+     * Gera e baixa o PDF com os dados do usuário.
+     */
+    const handleConfirmExport = async () => {
+      if (!user.value || !imcCardRef.value) return;
+      
+      exportingPdf.value = true;
+
+      try {
+        const doc = new jsPDF('p', 'mm', 'a4'); // p = portrait, mm = milímetros, a4 = tamanho
+        const data = userData.value;
+        const userName = user.value.name || 'Usuário';
+        const today = new Date().toLocaleDateString('pt-BR');
+        let y = 20; // Posição vertical inicial (margem superior)
+
+        // --- 1. Título ---
+        doc.setFontSize(18);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Relatório Nutricional - ${userName}`, 105, y, { align: 'center' });
+        y += 7;
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Gerado em: ${today}`, 105, y, { align: 'center' });
+        y += 15;
+
+        // --- 2. Resumo do Perfil ---
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Resumo do Perfil', 14, y);
+        y += 8;
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Objetivo Principal: ${data.goal || 'Não definido'}`, 16, y);
+        doc.text(`Peso: ${data.weight || 'N/A'} kg`, 110, y);
+        y += 6;
+        doc.text(`Altura: ${data.height || 'N/A'} cm`, 16, y);
+        doc.text(`Idade: ${calculateAge.value || 'N/A'} anos`, 110, y);
+        y += 10;
+        
+        // --- 3. Card de IMC (como Imagem) ---
+        // Captura o elemento HTML
+        const canvas = await html2canvas(imcCardRef.value, {
+            scale: 2, // Melhor resolução
+            backgroundColor: null, // Mantém o fundo do card
+        });
+        const imgData = canvas.toDataURL('image/png');
+        
+        // Adiciona a imagem ao PDF
+        // (largura, altura) - ajuste os valores 70 e 35 se necessário
+        doc.addImage(imgData, 'PNG', 14, y, 70, 35); 
+        y += 45; // Espaço após a imagem
+
+        // --- 4. Recomendações (Estrutura Padrão) ---
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Minhas Recomendações Nutricionais', 14, y);
+        y += 8;
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text("Aqui você pode adicionar as recomendações que o nutricionista gerou.", 14, y);
+        y += 5;
+        doc.text("Exemplo: 'Focar em consumir 120g de proteína por dia.'", 14, y);
+        y += 5;
+        doc.text("Exemplo: 'Beber pelo menos 2L de água.'", 14, y);
+        y += 15;
+        
+        // --- 5. Outros Dados (Ex: Alergias) ---
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Informações Importantes', 14, y);
+        y += 6;
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Condições Médicas: ${arrayToString(data.medicalConditions) || 'Nenhuma'}`, 16, y);
+        y += 6;
+        doc.text(`Alergias: ${arrayToString(data.allergies) || 'Nenhuma'}`, 16, y);
+        y += 6;
+
+        // --- Rodapé (simples) ---
+        doc.setFontSize(8);
+        doc.text(`Página 1 de 1`, 190, 285, { align: 'right' });
+
+        // --- 6. Salvar o PDF ---
+        doc.save(`relatorio-nutricional-${userName.toLowerCase().replace(' ', '-')}.pdf`);
+
+      } catch (err) {
+        console.error("Erro ao gerar PDF:", err);
+        error.value = "Não foi possível gerar o PDF. Tente novamente.";
+      } finally {
+        exportingPdf.value = false;
+        closeExportModal();
+      }
+    };
+
     return {
       user, userData, loading, saving, success, error, currentPageTitle,
       medicalConditionsOptions, allergiesOptions, surgeriesOptions,
-      calculateAge, imc, imcCategory, saveUser, resetForm,
+      calculateAge, imc, imcCategory, saveUser, resetForm, showExportModal,
+      exportingPdf, imcCardRef, openExportModal, closeExportModal, handleConfirmExport,
     };
   },
 });
@@ -441,5 +571,62 @@ select[multiple] option:checked {
   color: var(--color-text-secondary);
   margin-top: 8px;
   display: block;
+}
+
+.export-btn {
+  padding: 8px 16px;
+  background: #6366f1; 
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: background-color 0.2s ease;
+}
+.export-btn:hover {
+  background: #3d3f90;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.modal-content {
+  background: var(--card-bg);
+  padding: 24px 30px;
+  border-radius: 12px;
+  border: 1px solid var(--card-border);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 450px;
+  z-index: 1001;
+}
+.modal-content h4 {
+  font-size: 20px;
+  color: var(--color-heading);
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+.modal-content p {
+  font-size: 15px;
+  color: var(--color-text);
+  margin-bottom: 24px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
 }
 </style>
