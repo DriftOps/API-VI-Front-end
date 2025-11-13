@@ -89,17 +89,55 @@
             </div>
 
             <div class="progress-card card-style chart-card">
-              <h3>Histórico de Peso</h3>
+              <div class="chart-header">
+                <h3>Histórico de Peso</h3>
+                <div class="chart-period-selector">
+                  <button
+                    @click="selectedPeriod = '30D'"
+                    :class="{ 'period-btn': true, 'active': selectedPeriod === '30D' }"
+                  >
+                    30 Dias
+                  </button>
+                  <button
+                    @click="selectedPeriod = '3M'"
+                    :class="{ 'period-btn': true, 'active': selectedPeriod === '3M' }"
+                  >
+                    3 Meses
+                  </button>
+                  <button
+                    @click="selectedPeriod = '1Y'"
+                    :class="{ 'period-btn': true, 'active': selectedPeriod === '1Y' }"
+                  >
+                    1 Ano
+                  </button>
+                  <button
+                    @click="selectedPeriod = 'ALL'"
+                    :class="{ 'period-btn': true, 'active': selectedPeriod === 'ALL' }"
+                  >
+                    Tudo
+                  </button>
+                </div>
+              </div>
+
               <div class="chart-container">
-                <Line v-if="chartData.datasets[0].data.length > 1" :data="chartData" :options="chartOptions" />
-                <p v-else class="faint info-text">Registre seu peso mais vezes para ver a evolução no gráfico.</p>
+                <Line v-if="filteredWeightHistory.length > 1" :data="chartData" :options="chartOptions" />
+                
+                <p v-else-if="weightHistory.length > 1 && filteredWeightHistory.length <= 1" class="faint info-text">
+                  Não há dados de peso suficientes no período selecionado. Tente um período maior.
+                </p>
+                <p v-else class="faint info-text">
+                  Registre seu peso mais vezes para ver a evolução no gráfico.
+                </p>
               </div>
             </div>
 
           </div>
         </div>
 
-      </div> </div> <Teleport to="body">
+      </div>
+    </div>
+
+    <Teleport to="body">
        <div v-if="showWeightLogModal" class="modal-overlay" @click.self="showWeightLogModal = false">
         <div class="modal-content">
           <h2>Registrar novo peso</h2>
@@ -180,6 +218,9 @@ interface GoalForm {
     targetDate: string | null;
 }
 
+// NOVO: Tipo para o período do gráfico
+type ChartPeriod = '30D' | '3M' | '1Y' | 'ALL';
+
 // --- Refs de Estado ---
 const showWeightLogModal = ref(false);
 const newWeightEntry = ref<number | null>(null);
@@ -189,6 +230,9 @@ const userProfile = ref<User | null>(null);
 const userPlanGoal = ref<UserPlanGoal>({ goalWeight: null, targetDate: null, goalType: null });
 const showGoalSetterModal = ref(false);
 const height = ref(1.70); // Valor padrão
+
+// NOVO: Estado para o período do gráfico
+const selectedPeriod = ref<ChartPeriod>('3M'); // Define "3 Meses" como padrão
 
 const goalForm = reactive<GoalForm>({
     goalWeight: null,
@@ -373,10 +417,54 @@ const bmiClass = computed<string>(() => {
   const v = bmi.value; if (v <= 0) return ''; if (v < 18.5) return 'bmi-low'; if (v < 25) return 'bmi-ok'; if (v < 30) return 'bmi-mid'; if (v < 35) return 'bmi-high'; return 'bmi-very-high';
 });
 
+// NOVO: Computed property para filtrar o histórico de peso
+const filteredWeightHistory = computed<WeightLog[]>(() => {
+  const allLogs = weightHistory.value;
+  if (allLogs.length === 0) return [];
+
+  const today = new Date();
+  today.setHours(23, 59, 59, 999); // Garante que "hoje" seja incluído
+
+  let cutoffDate = new Date(today);
+
+  switch (selectedPeriod.value) {
+    case '30D':
+      cutoffDate.setDate(today.getDate() - 30);
+      break;
+    case '3M':
+      cutoffDate.setMonth(today.getMonth() - 3);
+      break;
+    case '1Y':
+      cutoffDate.setFullYear(today.getFullYear() - 1);
+      break;
+    case 'ALL':
+      // Retorna todos os logs
+      return allLogs;
+  }
+  
+  cutoffDate.setHours(0, 0, 0, 0); // Define o corte para o início do dia
+
+  return allLogs.filter(log => {
+      try {
+          // Converte 'YYYY-MM-DD' para data local de forma segura
+          const parts = log.logDate.split('-');
+          if (parts.length !== 3) return false;
+          // new Date(year, monthIndex, day)
+          const logDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+          
+          return logDate >= cutoffDate;
+      } catch (e) {
+          console.warn("Data de log inválida:", log.logDate);
+          return false;
+      }
+  });
+});
+
+// MODIFICADO: chartData agora usa 'filteredWeightHistory'
 const chartData = computed(() => ({
-  labels: weightHistory.value.map(log => formatDate(log.logDate)),
+  labels: filteredWeightHistory.value.map(log => formatDate(log.logDate)),
   datasets: [{
-      label: 'Peso (kg)', data: weightHistory.value.map(log => log.weight),
+      label: 'Peso (kg)', data: filteredWeightHistory.value.map(log => log.weight),
       backgroundColor: 'rgba(79, 70, 229, 0.1)', borderColor: 'rgba(79, 70, 229, 1)',
       tension: 0.3, fill: true, pointBackgroundColor: 'rgba(79, 70, 229, 1)',
       pointBorderColor: '#fff', pointHoverBackgroundColor: '#fff', pointHoverBorderColor: 'rgba(79, 70, 229, 1)',
@@ -405,7 +493,9 @@ const weightDeltaGoal = computed<number>(() => {
 const daysUntilDeadline = computed<string | number>(() => {
    const targetDateStr = userPlanGoal.value?.targetDate; if (!targetDateStr) return '?';
    try {
-     const today = new Date(); today.setHours(0, 0, 0, 0); const deadline = new Date(targetDateStr); deadline.setHours(0,0,0,0);
+     const today = new Date(); today.setHours(0, 0, 0, 0); 
+     const deadline = new Date(targetDateStr + 'T00:00:00-03:00'); // Assume fuso local ou ajusta
+     deadline.setHours(0,0,0,0);
      if (isNaN(deadline.getTime())) return '?'; const diffTime = deadline.getTime() - today.getTime();
      if (diffTime < 0) return 0; return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
    } catch { return '?'; }
@@ -496,10 +586,6 @@ h2 { font-size: 20px; color: var(--color-heading); margin: 0 0 20px 0; padding-b
 /* --- Card Visualizador --- */
 .body-visualizer-card { justify-content: center; padding-top: 30px; padding-bottom: 30px; }
 
-/* --- Card Gráfico --- */
-.chart-card { grid-column: 1 / -1; min-height: 340px; }
-.chart-container { height: 280px; width: 100%; position: relative; margin-top: 10px; }
-
 /* --- Modal Base --- */
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(3px); }
 .modal-content { background: var(--card-bg); padding: 24px 30px; border-radius: 16px; width: 90%; max-width: 400px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
@@ -525,6 +611,89 @@ h2 { font-size: 20px; color: var(--color-heading); margin: 0 0 20px 0; padding-b
 .goal-type.gain { color: #3b82f6; }
 .goal-type.loss { color: #ef4444; }
 .goal-type.maintain { color: #eab308; }
+
+
+/* --- NOVOS ESTILOS: Card Gráfico (Modificações e Adições) --- */
+.chart-card {
+  grid-column: 1 / -1;
+  min-height: 340px;
+  padding: 20px; /* Ajusta padding para o novo header */
+  display: flex; /* Garante que o flex-direction column funcione */
+  flex-direction: column;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 10px; /* Espaço entre header e container do gráfico */
+}
+
+/* Sobrescreve o h3 genérico do .progress-card */
+.chart-header h3 {
+  margin: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+  font-size: 16px; 
+  font-weight: 600;
+  color: var(--color-heading);
+  text-align: left; /* Garante alinhamento */
+  width: auto; /* Garante que não ocupe 100% */
+}
+
+/* Seletor de período */
+.chart-period-selector {
+  display: flex;
+  gap: 6px;
+  background-color: var(--input-bg);
+  border-radius: 20px;
+  padding: 4px;
+  border: 1px solid var(--card-border);
+}
+
+.period-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease-out;
+}
+
+.period-btn.active {
+  background-color: var(--primary-color);
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(var(--primary-color-rgb, 79, 70, 229), 0.3);
+}
+
+.period-btn:not(.active):hover {
+  color: var(--color-text);
+}
+
+.chart-container {
+  height: 280px;
+  width: 100%;
+  position: relative;
+  margin-top: 10px;
+  flex-grow: 1; /* Faz o container ocupar o espaço restante */
+}
+
+/* Garante que o h3 dos outros cards não seja afetado */
+.progress-card:not(.chart-card) h3 {
+   font-size: 15px; 
+   color: var(--color-text-secondary); 
+   margin: 0 0 12px 0; 
+   font-weight: 600; 
+   width: 100%; 
+   text-align: center; 
+   border-bottom: 1px solid var(--card-border); 
+   padding-bottom: 8px; 
+}
+
 
 /* Adicione as variáveis CSS ausentes (exemplo) */
 :root {
