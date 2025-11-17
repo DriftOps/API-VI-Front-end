@@ -10,7 +10,7 @@ const routes = [
   },
   {
     path: '/signup',
-    name: 'Signup', 
+    name: 'Signup',
     component: () => import('@/pages/Signup.vue'),
     meta: { requiresAuth: false, hideLayout: true }
   },
@@ -36,6 +36,12 @@ const routes = [
     path: '/education',
     name: 'Education',
     component: () => import('@/pages/Education.vue'),
+    meta: { requiresAuth: true }
+  },
+    {
+    path: '/recommendplaces',
+    name: 'RecommendPlaces',
+    component: () => import('@/pages/RecommendPlaces.vue'),
     meta: { requiresAuth: true }
   },
   {
@@ -91,7 +97,7 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
   userStore.initUser()
-  
+
   if (to.meta.requiresAuth && !userStore.isAuthenticated) {
     next('/')
   } else if (to.meta.requiresAdmin && userStore.user?.role !== 'ADMIN') {
