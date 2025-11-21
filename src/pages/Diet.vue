@@ -201,6 +201,34 @@
               </div>
             </div>
           </div>
+
+          <div class="macros-card mt-4" v-if="diet.baseDailyProteinG || diet.baseDailyCarbsG || diet.baseDailyFatsG">
+               <h3 class="text-sm font-semibold text-gray-500 mb-3">Distribuição de Macronutrientes (Meta Base)</h3>
+               <div class="macros-grid">
+                 <div class="macro-item">
+                   <div class="macro-circle protein">
+                     <span class="macro-value">{{ diet.baseDailyProteinG || 0 }}g</span>
+                     <span class="macro-label">Proteína</span>
+                   </div>
+                 </div>
+                 <div class="macro-item">
+                   <div class="macro-circle carbs">
+                     <span class="macro-value">{{ diet.baseDailyCarbsG || 0 }}g</span>
+                     <span class="macro-label">Carbo</span>
+                   </div>
+                 </div>
+                 <div class="macro-item">
+                   <div class="macro-circle fats">
+                     <span class="macro-value">{{ diet.baseDailyFatsG || 0 }}g</span>
+                     <span class="macro-label">Gordura</span>
+                   </div>
+                 </div>
+               </div>
+            </div>
+            
+            <div class="mt-2 text-xs text-gray-400 text-center">
+               Piso Metabólico Seguro (TMB): <strong>{{ diet.safeMetabolicFloor }} kcal</strong>
+             </div>
   
         </div>
       </div>
@@ -371,8 +399,8 @@
   </script>
     
   
-  <style scoped>
-    /* Variáveis de Cor (assumindo que estão em main.css ou :root) */
+    <style scoped>
+    /* Variáveis de Cor */
     :root {
       --primary-color: #4f46e5;
       --card-bg: #ffffff;
@@ -381,10 +409,9 @@
       --color-heading: #111827;
       --color-text: #374151;
       --color-text-secondary: #6b7280;
-      /* ... etc ... */
     }
     
-    /* Modo Escuro (assumindo que estão em main.css ou :root) */
+    /* Modo Escuro */
     .dark {
       --primary-color: #6366f1;
       --card-bg: #1f2937;
@@ -395,15 +422,18 @@
       --color-text-secondary: #9ca3af;
     }
   
-    /* Layout (Sem Mudanças) */
+    /* Layout Geral */
     .p-4 { padding: 1rem; }
     .md\:p-8 { @media (min-width: 768px) { padding: 2rem; } }
     .max-w-6xl { max-width: 72rem; }
     .mx-auto { margin-left: auto; margin-right: auto; }
-    .w-full { width: 350%; } /* CORREÇÃO: O seu estava 300% */
+    
+    /* CORREÇÃO 1: Largura correta para não estourar a tela */
+    .w-full { width: 220%; } 
+    
     .mt-6 { margin-top: 1.5rem; }
   
-    /* Cabeçalho da Página (Sem Mudanças) */
+    /* Cabeçalho da Página */
     .page-header {
       display: flex;
       justify-content: space-between;
@@ -413,7 +443,7 @@
       border-bottom: 1px solid var(--card-border);
     }
     .page-title {
-      font-size: 1.875rem; /* 3xl */
+      font-size: 1.875rem;
       font-weight: 700;
       color: var(--color-heading);
     }
@@ -421,7 +451,7 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background-color: #ef4444; /* Vermelho */
+      background-color: #ef4444;
       color: white;
       padding: 8px 16px;
       border-radius: 8px;
@@ -432,10 +462,10 @@
       transition: background-color 0.2s;
     }
     .cancel-diet-btn:hover {
-      background-color: #dc2626; /* Vermelho mais escuro */
+      background-color: #dc2626;
     }
   
-    /* Estado de Loading (Sem Mudanças) */
+    /* Estados de Loading e Erro */
     .loading-state {
       text-align: center;
       padding: 2.5rem 0;
@@ -454,7 +484,6 @@
       to { transform: rotate(360deg); }
     }
   
-    /* Estilos reutilizados do Chat.vue (Sem Mudanças) */
     .welcome-message {
       display: flex;
       gap: 16px;
@@ -464,9 +493,7 @@
       margin-bottom: 20px;
       border: 1px solid var(--card-border);
     }
-    .welcome-message.error-card {
-      border-color: #ef4444;
-    }
+    .welcome-message.error-card { border-color: #ef4444; }
     .welcome-avatar {
       width: 60px;
       height: 60px;
@@ -498,192 +525,32 @@
       border-color: var(--primary-color);
     }
   
-    /* Sumário da Dieta (Antigo) - REMOVIDO
-    .diet-summary-header { ... }
-    .diet-meta { ... }
-    */
-    
-    /* Grid da Dieta (Sem Mudanças) */
-    .diet-grid {
-      display: grid;
-      grid-template-columns: repeat(1, minmax(0, 1fr));
-      gap: 1rem;
-    }
-    @media (min-width: 768px) {
-      .diet-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-    @media (min-width: 1024px) {
-      .diet-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    }
-  
-    /* Card de Dia (Pequenas Mudanças) */
-    .day-card {
-      background: var(--card-bg);
-      padding: 12px 16px;
-      border-radius: 12px;
-      border: 1px solid var(--card-border);
-      transition: all 0.2s ease;
-    }
-    .day-card.is-today {
-      /* Esta classe ainda existe, mas não é mais o principal destaque */
-      border-color: var(--primary-color);
-      border-width: 1px;
-    }
-    .day-card.is-past-empty {
-      background-color: var(--color-background);
-      opacity: 0.7;
-    }
-    .dark .day-card.is-past-empty {
-      background-color: rgba(31, 41, 55, 0.5);
-    }
-    .day-card.is-past {
-      /* NOVO: Estilo para dias passados no histórico */
-      opacity: 0.85;
-    }
-    .day-card.is-past:hover {
-      opacity: 1;
-    }
-  
-    .day-card-title {
-      font-weight: 700;
-      font-size: 1rem; /* Um pouco menor que o original */
-      color: var(--color-heading);
-      margin-bottom: 0.75rem;
-    }
-    .day-card-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.25rem;
-    }
-    .day-card-label {
-      font-size: 0.875rem;
-      color: var(--color-text-secondary);
-    }
-    .day-card-value {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: var(--color-heading);
-    }
-    .day-card-balance {
-      font-size: 0.875rem;
-      font-weight: 500;
-      text-align: right;
-    }
-    
-    /* Classes de Cor para JS (Sem Mudanças) */
-    .text-red { color: #ef4444; font-weight: 700; }
-    .text-green { color: #22c55e; font-weight: 700; }
-    .text-gray { color: var(--color-text-secondary); }
-  
-    /* Barra de Progresso (Sem Mudanças) */
-    .progress-bar-bg {
-      width: 100%;
-      background-color: var(--card-border);
-      border-radius: 9999px;
-      height: 0.625rem;
-      margin-top: 0.5rem;
-      margin-bottom: 0.5rem;
-      overflow: hidden;
-    }
-    .dark .progress-bar-bg {
-      background-color: #374151;
-    }
-    .progress-bar-fill {
-      height: 100%;
-      border-radius: 9999px;
-    }
-    .progress-ok { background-color: #22c55e; }
-    .progress-over { background-color: #ef4444; }
-    .progress-empty { background-color: var(--card-border); }
-    .dark .progress-empty { background-color: #374151; }
-  
-    /* Estilo do Racional da IA (Sem Mudanças) */
-    .nutritionist-comment-bubble {
-      background: #fefce8; 
-      border: 1px solid #facc15;
-      border-radius: 8px;
-      padding: 10px 14px;
-      color: #1f2937;
-      line-height: 1.4;
-      word-wrap: break-word;
-      margin-top: 1rem;
-    }
-    .dark .nutritionist-comment-bubble {
-      background: #3a3a1f;
-      border-color: #a16207;
-      color: #fef08a;
-    }
-    .comment-sender-label {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.8em;
-      font-weight: 700;
-      margin-bottom: 4px;
-      color: #a16207;
-    }
-    .dark .comment-sender-label {
-      color: #fef08a;
-    }
-    .nutritionist-comment-bubble p {
-      margin: 0;
-    }
-  
-    /* Estilo do Botão Editar (Sem Mudanças) */
-    .msg-action {
-      background: none;
-      border: none;
-      color: var(--color-text-secondary);
-      cursor: pointer;
-      padding: 4px;
-      border-radius: 4px;
-      font-size: 12px;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      margin-top: 4px;
-      opacity: 0.7;
-    }
-    .msg-action:hover {
-      background: var(--card-border);
-      color: var(--color-text);
-      opacity: 1;
-    }
-  
-    /* --- NOVOS ESTILOS PARA O REDESIGN --- */
-  
+    /* --- CORREÇÃO 2: Grid Principal --- */
     .diet-title {
-      font-size: 1.875rem; /* 3xl */
+      font-size: 1.875rem;
       font-weight: 700;
       color: var(--color-heading);
-      margin-bottom: 0; /* Ajustado */
+      margin-bottom: 0.5rem;
     }
   
+    /* Removemos a divisão de colunas aqui. Agora é um fluxo vertical simples. */
     .diet-summary-grid {
-      display: grid;
-      grid-template-columns: 1fr;
+      display: flex;
+      flex-direction: column;
       gap: 1.5rem;
     }
-    @media (min-width: 1024px) {
-      .diet-summary-grid {
-        grid-template-columns: 1fr 1fr; /* 2 colunas em telas grandes */
-      }
-    }
   
+    /* --- CORREÇÃO 3: Cards de Estatísticas --- */
     .summary-stats {
       display: grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: 1fr; /* Celular: 1 por linha */
       gap: 1rem;
     }
+    
+    /* Tablet e Desktop: Sempre 3 por linha */
     @media (min-width: 640px) {
       .summary-stats {
-        grid-template-columns: repeat(3, 1fr); /* 3 colunas em telas pequenas */
-      }
-      @media (min-width: 1024px) {
-        .summary-stats {
-          grid-template-columns: 1fr; /* Volta a 1 coluna dentro do grid maior */
-        }
+        grid-template-columns: repeat(3, 1fr); 
       }
     }
   
@@ -705,46 +572,23 @@
       justify-content: center;
       margin-bottom: 0.75rem;
     }
-    .dark .stat-icon-bg {
-      /* Ajustes para modo escuro */
-      background-color: var(--card-border) !important;
-    }
+    .dark .stat-icon-bg { background-color: var(--card-border) !important; }
     
-    .stat-label {
-      font-size: 0.875rem;
-      color: var(--color-text-secondary);
-      margin-bottom: 0.25rem;
-    }
-    
-    .stat-value {
-      font-size: 1.125rem;
-      font-weight: 600;
-      color: var(--color-heading);
-    }
+    .stat-label { font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 0.25rem; }
+    .stat-value { font-size: 1.125rem; font-weight: 600; color: var(--color-heading); }
   
-    .section-divider {
-      border: none;
-      border-top: 1px solid var(--card-border);
-      margin: 2rem 0;
-    }
+    .section-divider { border: none; border-top: 1px solid var(--card-border); margin: 2rem 0; }
+    .section-title { font-size: 1.25rem; font-weight: 600; color: var(--color-heading); margin-bottom: 1rem; }
   
-    .section-title {
-      font-size: 1.25rem; /* 2xl */
-      font-weight: 600;
-      color: var(--color-heading);
-      margin-bottom: 1rem;
-    }
-  
+    /* Card de Hoje */
     .today-focus-card {
       background: var(--card-bg);
       border: 2px solid var(--primary-color);
       border-radius: 16px;
       padding: 1.5rem;
-      box-shadow: 0 4px 12px -1px rgba(0,0,0,0.05), 0 2px 8px -1px rgba(0,0,0,0.03);
+      box-shadow: 0 4px 12px -1px rgba(0,0,0,0.05);
     }
-    .dark .today-focus-card {
-      box-shadow: 0 0 0 1px var(--primary-color);
-    }
+    .dark .today-focus-card { box-shadow: 0 0 0 1px var(--primary-color); }
     
     .today-card-content {
       display: flex;
@@ -753,60 +597,126 @@
       margin-bottom: 1rem;
     }
     @media (min-width: 768px) {
-      .today-card-content {
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-      }
+      .today-card-content { flex-direction: row; align-items: center; justify-content: space-between; }
     }
     
-    .today-main-stats {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-    
-    .today-stat {
-      display: flex;
-      flex-direction: column;
-    }
-    .today-stat .label {
-      font-size: 0.875rem;
-      color: var(--color-text-secondary);
-      margin-bottom: 0.25rem;
-    }
-    .today-stat .value {
-      font-size: 1.875rem;
-      font-weight: 700;
-      color: var(--color-heading);
-      line-height: 1;
-    }
-    
-    .today-vs {
-      font-size: 1.5rem;
-      color: var(--color-text-secondary);
-      padding-top: 1rem;
-    }
+    .today-main-stats { display: flex; align-items: center; gap: 0.75rem; }
+    .today-stat { display: flex; flex-direction: column; }
+    .today-stat .label { font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 0.25rem; }
+    .today-stat .value { font-size: 1.875rem; font-weight: 700; color: var(--color-heading); line-height: 1; }
+    .today-vs { font-size: 1.5rem; color: var(--color-text-secondary); padding-top: 1rem; }
   
-    .today-balance {
+    .today-balance { display: flex; flex-direction: column; text-align: left; }
+    @media (min-width: 768px) { .today-balance { text-align: right; } }
+    .today-balance .label { font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 0.25rem; }
+    .today-balance .value { font-size: 1.875rem; font-weight: 700; line-height: 1; }
+  
+    /* Grid de Dias */
+    .diet-grid {
+      display: grid;
+      grid-template-columns: repeat(1, minmax(0, 1fr));
+      gap: 1rem;
+    }
+    @media (min-width: 768px) { .diet-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (min-width: 1024px) { .diet-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  
+    .day-card {
+      background: var(--card-bg);
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      transition: all 0.2s ease;
+    }
+    .day-card.is-today { border-color: var(--primary-color); border-width: 1px; }
+    .day-card.is-past-empty { background-color: var(--color-background); opacity: 0.7; }
+    .dark .day-card.is-past-empty { background-color: rgba(31, 41, 55, 0.5); }
+    .day-card.is-past { opacity: 0.85; }
+    .day-card.is-past:hover { opacity: 1; }
+  
+    .day-card-title { font-weight: 700; font-size: 1rem; color: var(--color-heading); margin-bottom: 0.75rem; }
+    .day-card-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem; }
+    .day-card-label { font-size: 0.875rem; color: var(--color-text-secondary); }
+    .day-card-value { font-size: 0.875rem; font-weight: 600; color: var(--color-heading); }
+    .day-card-balance { font-size: 0.875rem; font-weight: 500; text-align: right; }
+    
+    /* Cores Utilitárias */
+    .text-red { color: #ef4444; font-weight: 700; }
+    .text-green { color: #22c55e; font-weight: 700; }
+    .text-gray { color: var(--color-text-secondary); }
+  
+    /* Barra de Progresso */
+    .progress-bar-bg {
+      width: 100%;
+      background-color: var(--card-border);
+      border-radius: 9999px;
+      height: 0.625rem;
+      margin-top: 0.5rem;
+      margin-bottom: 0.5rem;
+      overflow: hidden;
+    }
+    .dark .progress-bar-bg { background-color: #374151; }
+    .progress-bar-fill { height: 100%; border-radius: 9999px; }
+    .progress-ok { background-color: #22c55e; }
+    .progress-over { background-color: #ef4444; }
+    .progress-empty { background-color: var(--card-border); }
+    .dark .progress-empty { background-color: #374151; }
+  
+    /* Racional da IA */
+    .nutritionist-comment-bubble {
+      background: #fefce8; 
+      border: 1px solid #facc15;
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #1f2937;
+      line-height: 1.4;
+      word-wrap: break-word;
+      margin-top: 1rem;
+    }
+    .dark .nutritionist-comment-bubble { background: #3a3a1f; border-color: #a16207; color: #fef08a; }
+    .comment-sender-label { display: flex; align-items: center; gap: 6px; font-size: 0.8em; font-weight: 700; margin-bottom: 4px; color: #a16207; }
+    .dark .comment-sender-label { color: #fef08a; }
+    .nutritionist-comment-bubble p { margin: 0; }
+  
+    /* Ações */
+    .msg-action {
+      background: none;
+      border: none;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 4px;
+      opacity: 0.7;
+    }
+    .msg-action:hover { background: var(--card-border); color: var(--color-text); opacity: 1; }
+  
+    /* Macros */
+    .macros-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1rem;
+    }
+    .macros-grid { display: flex; justify-content: space-around; gap: 1rem; }
+    .macro-item { display: flex; flex-direction: column; align-items: center; }
+    .macro-circle {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
       display: flex;
       flex-direction: column;
-      text-align: left;
+      align-items: center;
+      justify-content: center;
+      border: 4px solid;
     }
-    @media (min-width: 768px) {
-      .today-balance {
-        text-align: right;
-      }
-    }
-    .today-balance .label {
-      font-size: 0.875rem;
-      color: var(--color-text-secondary);
-      margin-bottom: 0.25rem;
-    }
-    .today-balance .value {
-      font-size: 1.875rem;
-      font-weight: 700;
-      line-height: 1;
-    }
-    
+    .macro-value { font-weight: 700; font-size: 1.1rem; color: var(--color-heading); line-height: 1; }
+    .macro-label { font-size: 0.75rem; color: var(--color-text-secondary); }
+    .protein { border-color: #3b82f6; background-color: rgba(59, 130, 246, 0.1); }
+    .carbs { border-color: #eab308; background-color: rgba(234, 179, 8, 0.1); }
+    .fats { border-color: #ef4444; background-color: rgba(239, 68, 68, 0.1); }
   </style>
+    

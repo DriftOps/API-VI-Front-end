@@ -1,5 +1,3 @@
-// src/api/dietApi.ts
-
 const API_URL = 'http://localhost:8080/api/diets' 
 
 // --- Interfaces (DTOs) ---
@@ -25,6 +23,10 @@ export interface DietView {
   initialWeight: number;
   targetWeight: number;
   baseDailyCalories: number;
+  baseDailyProteinG: number | null;
+  baseDailyCarbsG: number | null;
+  baseDailyFatsG: number | null;
+  safeMetabolicFloor: number;
   aiRationale: string | null;
   dailyTargets: DietDailyTarget[];
 }
@@ -36,6 +38,10 @@ export interface CreateDietRequest {
     targetWeight: number;
     baseDailyCalories: number;
     safeMetabolicFloor: number;
+    baseDailyProteinG?: number;
+    baseDailyCarbsG?: number;
+    baseDailyFatsG?: number;
+    aiRationale?: string;
 }
 
 /**
@@ -43,8 +49,10 @@ export interface CreateDietRequest {
  */
 export async function getActiveDiet(): Promise<DietView> {
   const token = localStorage.getItem('token');
+
+  const userId = localStorage.getItem('userId');
   
-  const response = await fetch(`${API_URL}/active`, {
+  const response = await fetch(`${API_URL}/active/${userId}`, {
     headers: { 'Authorization': `Bearer ${token}` }
   });
 

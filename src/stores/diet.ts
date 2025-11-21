@@ -116,7 +116,5 @@ export const useDietStore = defineStore('diet', {
       this.error = null;
     },
     
-    // (Não precisamos mais desta, pois a 'updateTargetCalories' já faz)
-    // updateDailyTargetOptimistic(updatedTarget: DietDailyTarget) { ... }
   }
 });

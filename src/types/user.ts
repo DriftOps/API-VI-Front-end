@@ -1,5 +1,3 @@
-// src/types/User.ts
-
 import type { ChatMessage } from '@/stores/user'
 
 // Representa os dados da tabela `user_anamnesis` (sem alterações aqui)
@@ -25,7 +23,8 @@ export interface UserAnamnesis {
 
 // Interface principal do usuário, usada para tipar o userStore
 export interface User {
-  id: number
+  id?: number
+  userId?: number
   name: string
   email: string
   role: string
