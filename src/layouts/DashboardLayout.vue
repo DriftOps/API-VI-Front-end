@@ -24,9 +24,9 @@
               <span class="nav-text">Refeições</span>
             </router-link>
   
-            <router-link to="/meal-plan" class="nav-item" active-class="active">
+            <router-link to="/diet" class="nav-item" active-class="active">
               <UtensilsIcon :size="20" class="nav-icon" />
-              <span class="nav-text">Plano Alimentar</span>
+              <span class="nav-text">Dietas</span>
             </router-link>
   
             <router-link to="/goals" class="nav-item" active-class="active">
