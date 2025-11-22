@@ -9,6 +9,7 @@ interface ChatMessageDTO {
   id: number;
   sender: 'user' | 'assistant';
   message: string;
+  image: dto.image,
   timestamp: string;
   nutritionistComment?: string;
   userId: number;
@@ -30,24 +31,30 @@ export async function fetchChatHistory(): Promise<ChatMessage[]> {
     id: dto.id,
     from: dto.sender === 'user' ? userName : 'Nutricionista',
     message: dto.message,
+    image: dto.image,
     timestamp: new Date(dto.timestamp),
     nutritionistComment: dto.nutritionistComment, 
     feedback: dto.userFeedback || null        
   }));
 }
 
-export async function postNewMessage(message: string): Promise<ChatMessage> {
+export async function postNewMessage(message: string, image?: string): Promise<ChatMessage> {
   const token = localStorage.getItem('token');
+  
+  // Monta o corpo da requisição
+  const body: any = { message: message };
+  if (image) {
+    body.image = image; // Adiciona a imagem em Base64 se existir
+  }
+
   const response = await fetch(`${API_URL}/send`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ message: message })
+    body: JSON.stringify(body)
   });
-
-  
 
   if (!response.ok) throw new Error('Erro ao enviar mensagem');
   
@@ -55,11 +62,12 @@ export async function postNewMessage(message: string): Promise<ChatMessage> {
 
   return {
     id: dto.id,
-    from: 'NutriX', // Padronizado para 'NutriX'
+    from: 'NutriX',
     message: dto.message,
+    image: dto.image,
     timestamp: new Date(dto.timestamp),
-    nutritionistComment: dto.nutritionistComment, // <-- ADICIONADO (será null)
-    feedback: dto.userFeedback || null         // <-- ADICIONADO (será null)
+    nutritionistComment: dto.nutritionistComment,
+    feedback: dto.userFeedback || null
   };
 }
 

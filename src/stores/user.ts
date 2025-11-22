@@ -9,6 +9,7 @@ export interface ChatMessage {
   id: number
   from: string
   message: string
+  image?: string
   timestamp: Date
 }
 

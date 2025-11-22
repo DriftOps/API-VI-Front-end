@@ -29,7 +29,7 @@
           </div>
           <div class="welcome-content">
             <h3>Olá! Sou sua nutricionista virtual</h3>
-            <p>Estou aqui para ajudar você com orientações personalizadas sobre alimentação, suplementação e hábitos saudáveis. Como posso ajudar você hoje?</p>
+            <p>Estou aqui para ajudar você com orientações personalizadas sobre alimentação, suplementação e hábitos saudáveis. Você também pode me enviar fotos das suas refeições para eu analisar!</p>
             <div class="quick-questions">
               <button @click="sendQuickQuestion('Gostaria de uma orientação para perda de peso')" class="quick-btn">Perda de peso</button>
               <button @click="sendQuickQuestion('Preciso de ajuda com ganho de massa muscular')" class="quick-btn">Ganho de massa</button>
@@ -57,7 +57,11 @@
               <span class="message-time">{{ formatTime(message.timestamp) }}</span>
             </div>
             
-            <div class="message-content" v-html="renderMarkdown(message.message)"></div>
+            <div class="message-content" v-if="message.message" v-html="renderMarkdown(message.message)"></div>
+
+            <div v-if="(message as any).image" class="message-image">
+              <img :src="(message as any).image" alt="Foto enviada" />
+            </div>
 
             <div v-if="message.nutritionistComment" class="nutritionist-comment-bubble">
               <strong class="comment-sender-label">
@@ -66,6 +70,7 @@
               </strong>
               <p>{{ message.nutritionistComment }}</p> 
             </div>
+            
             <div 
               v-if="message.from === 'NutriX'" 
               class="feedback-buttons"
@@ -107,11 +112,30 @@
       </div>
 
       <div class="chat-input-area">
+        
+        <div v-if="selectedImagePreview" class="image-preview-container">
+          <div class="preview-wrapper">
+            <img :src="selectedImagePreview" alt="Preview" class="preview-img" />
+            <button @click="clearImage" class="remove-img-btn" title="Remover imagem">
+              <XIcon :size="14" />
+            </button>
+          </div>
+        </div>
+
         <div class="input-actions">
           <button @click="toggleEmojiPicker" class="action-btn" title="Emojis">
             <SmileIcon :size="20" />
           </button>
-          <button @click="attachFile" class="action-btn" title="Anexar arquivo">
+          
+          <input 
+            type="file" 
+            ref="fileInput" 
+            accept="image/*" 
+            style="display: none" 
+            @change="handleFileUpload" 
+          />
+          
+          <button @click="triggerFileInput" class="action-btn" title="Anexar foto da refeição">
             <PaperclipIcon :size="20" />
           </button>
         </div>
@@ -135,7 +159,7 @@
           </div>
         </div>
 
-        <button @click="sendMessage" :disabled="loading || !newMessage.trim()" class="send-btn" :class="{ 'has-message': newMessage.trim() }">
+        <button @click="sendMessage" :disabled="loading || (!newMessage.trim() && !selectedImageBase64)" class="send-btn" :class="{ 'has-message': newMessage.trim() || selectedImageBase64 }">
           <SendIcon v-if="!loading" :size="20" />
           <LoaderIcon v-else :size="20" class="loading-spinner" />
         </button>
@@ -153,20 +177,18 @@ import MarkdownIt from "markdown-it";
 // Ícones
 import {
   User as UserIcon,
-  UserCheck as UserCheckIcon, // <-- ÍCONE ADICIONADO
+  UserCheck as UserCheckIcon,
   Send as SendIcon,
   Loader as LoaderIcon,
   Trash2 as Trash2Icon,
-  Bell as BellIcon,
-  BellOff as BellOffIcon,
   Smile as SmileIcon,
   Paperclip as PaperclipIcon,
   Copy as CopyIcon,
   ThumbsUp as ThumbsUpIcon,
-  ThumbsDown as ThumbsDownIcon    
+  ThumbsDown as ThumbsDownIcon,
+  X as XIcon 
 } from 'lucide-vue-next'
 
-// Reutiliza a interface do store para consistência
 import type { ChatMessage } from '@/stores/user';
 
 export default defineComponent({
@@ -174,91 +196,126 @@ export default defineComponent({
   components: {
     DashboardLayout,
     UserIcon,
-    UserCheckIcon, // <-- ÍCONE ADICIONADO
+    UserCheckIcon,
     SendIcon,
     LoaderIcon,
     Trash2Icon,
-    BellIcon,
-    BellOffIcon,
     SmileIcon,
     PaperclipIcon,
     CopyIcon,
     ThumbsUpIcon,
     ThumbsDownIcon,
+    XIcon
   },
   setup() {
     const userStore = useUserStore();
     const messagesContainer = ref<HTMLDivElement>();
     const messageInput = ref<HTMLInputElement>();
-    const emojiPickerRef = ref<HTMLDivElement>(); // Ref para o picker
+    const emojiPickerRef = ref<HTMLDivElement>(); 
+    
+    const fileInput = ref<HTMLInputElement | null>(null);
+    const selectedImageBase64 = ref<string | null>(null);
+    const selectedImagePreview = ref<string | null>(null);
+
     const newMessage = ref('');
-    const loading = ref(false); // Para o botão de enviar
-    const isTyping = ref(false); // Para o indicador "digitando..."
-    const isLoadingHistory = ref(true); // Para o carregamento inicial
+    const loading = ref(false); 
+    const isTyping = ref(false); 
+    const isLoadingHistory = ref(true); 
     const soundEnabled = ref(true);
     const showEmojiPicker = ref(false);
-    const isNutritionistOnline = ref(false); // Pode ser substituído por lógica real
+    const isNutritionistOnline = ref(false); 
 
     const user = computed(() => userStore.user);
-    // Pega o histórico diretamente do store (que foi carregado no initUser)
     const chatHistory = computed(() => userStore.chatHistory);
 
-    // Configuração do MarkdownIt
     const md = new MarkdownIt({ breaks: true, linkify: true });
-    const renderMarkdown = (text: string) => md.renderInline(text); // renderInline evita <p> extras
+    const renderMarkdown = (text: string) => md.renderInline(text);
 
-    // Emojis rápidos
     const quickEmojis = ['😊', '👍', '❤️', '🔥', '💪', '🥗', '🍎', '💧', '🏃‍♂️', '🎯'];
+
+    // --- FUNÇÕES DE IMAGEM ---
+
+    const triggerFileInput = () => {
+      fileInput.value?.click();
+    };
+
+    const handleFileUpload = (event: Event) => {
+      const target = event.target as HTMLInputElement;
+      if (target.files && target.files[0]) {
+        const file = target.files[0];
+        if (file.size > 5 * 1024 * 1024) {
+          alert("A imagem é muito grande. Máximo 5MB.");
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const result = e.target?.result as string;
+          selectedImagePreview.value = result;
+          selectedImageBase64.value = result;
+          messageInput.value?.focus();
+        };
+        reader.readAsDataURL(file);
+      }
+      if (fileInput.value) fileInput.value.value = '';
+    };
+
+    const clearImage = () => {
+      selectedImageBase64.value = null;
+      selectedImagePreview.value = null;
+      if (fileInput.value) fileInput.value.value = '';
+    };
 
     // --- FUNÇÕES PRINCIPAIS ---
 
     const sendMessage = async () => {
-      if (!newMessage.value.trim() || !user.value) return;
-      loading.value = true; // Desabilita input e mostra spinner no botão
-
+      if ((!newMessage.value.trim() && !selectedImageBase64.value) || !user.value) return;
+      
+      loading.value = true; 
       const userMessageText = newMessage.value;
-
-      // 1. Adiciona mensagem do usuário à UI (Otimista)
-      const userMessage: ChatMessage = {
-        id: Date.now(), // ID temporário, backend dará o real
-        from: user.value.name, // Usa o nome do usuário logado
+      
+      // 1. Adiciona mensagem Otimista (com propriedade 'image' extra)
+      // Usamos um cast 'as any' ou estendemos o tipo para aceitar 'image' localmente
+      const userMessage = {
+        id: Date.now(),
+        from: user.value.name,
         message: userMessageText,
-        timestamp: new Date()
+        timestamp: new Date(),
+        image: selectedImageBase64.value // <--- Guardamos a imagem aqui, separada
       };
-      userStore.addChatMessage(userMessage);
+      
+      userStore.addChatMessage(userMessage as ChatMessage); // Cast para entrar na store
 
-      // Limpa input e fecha picker
+      const textToSend = userMessageText;
+      const imageToSend = selectedImageBase64.value;
+
       newMessage.value = '';
+      clearImage();
       showEmojiPicker.value = false;
-      isTyping.value = true; // Mostra "digitando..."
-      await nextTick(() => scrollToBottom()); // Rola para baixo
+      isTyping.value = true; 
+      
+      await nextTick(() => scrollToBottom()); 
 
       try {
-        // 2. Chama o BACKEND JAVA (que por sua vez chama o Python)
-        // A API (chatApi.ts) já foi atualizada para trazer a resposta completa
-        const botMessage = await postNewMessage(userMessageText);
+        // 2. Envia para o backend
+        const botMessage = await postNewMessage(textToSend, imageToSend || undefined);
 
-        isTyping.value = false; // Esconde "digitando..."
-
-        // 3. Adiciona a resposta da AI (recebida do Java) à UI
+        isTyping.value = false; 
         userStore.addChatMessage(botMessage);
-
         if (soundEnabled.value) playNotificationSound();
 
       } catch (error) {
-        console.error('Erro ao enviar mensagem para o backend Java:', error);
+        console.error('Erro ao enviar mensagem:', error);
         isTyping.value = false;
-        // Adiciona uma mensagem de erro na UI
         const errorMessage: ChatMessage = {
-          id: Date.now() + 2, // ID temporário
+          id: Date.now() + 2,
           from: 'Sistema',
           message: "⚠️ Ocorreu um erro ao processar sua mensagem. Tente novamente.",
           timestamp: new Date()
         };
         userStore.addChatMessage(errorMessage);
       } finally {
-        loading.value = false; // Reabilita input e botão
-        await nextTick(() => scrollToBottom()); // Garante rolagem após a resposta
+        loading.value = false; 
+        await nextTick(() => scrollToBottom());
       }
     };
 
@@ -268,7 +325,7 @@ export default defineComponent({
     };
 
     const clearChat = () => {
-      if (confirm('Tem certeza que deseja limpar todo o histórico desta conversa? Esta ação não pode ser desfeita.')) {
+      if (confirm('Tem certeza que deseja limpar todo o histórico desta conversa?')) {
         userStore.clearChatHistory();
       }
     };
@@ -279,14 +336,13 @@ export default defineComponent({
 
       const newFeedback = msg.feedback === type ? null : type;
       const oldFeedback = msg.feedback;
-      
-      msg.feedback = newFeedback; // Atualização Otimista
+      msg.feedback = newFeedback; 
 
       try {
         await postFeedback(messageId, newFeedback);
       } catch (error) {
-        console.error("Falha ao salvar feedback, revertendo:", error);
-        msg.feedback = oldFeedback; // Reverte
+        console.error("Falha ao salvar feedback:", error);
+        msg.feedback = oldFeedback; 
       }
     };
 
@@ -304,15 +360,14 @@ export default defineComponent({
     const toggleSound = () => soundEnabled.value = !soundEnabled.value;
     const toggleEmojiPicker = () => showEmojiPicker.value = !showEmojiPicker.value;
     const addEmoji = (emoji: string) => { newMessage.value += emoji; messageInput.value?.focus(); };
-    const attachFile = () => alert('Funcionalidade de anexar arquivo ainda não implementada.');
     const copyMessage = (text: string) => navigator.clipboard.writeText(text);
 
     const playNotificationSound = () => {
       try {
         const audio = new Audio('/notification.wav'); 
         audio.volume = 0.3;
-        audio.play().catch(e => console.warn("Erro ao tocar som:", e));
-      } catch (e) { console.warn("Erro ao criar áudio:", e) }
+        audio.play().catch(e => console.warn("Erro som:", e));
+      } catch (e) {}
     };
 
     const scrollToBottom = () => {
@@ -321,14 +376,11 @@ export default defineComponent({
       }
     };
 
-    // Fecha o emoji picker se clicar fora dele
     const handleClickOutside = (event: MouseEvent) => {
       if (showEmojiPicker.value && emojiPickerRef.value && !emojiPickerRef.value.contains(event.target as Node) && !(event.target as Element).closest('.input-actions button:first-child')) {
           showEmojiPicker.value = false;
       }
     };
-
-    // --- CICLO DE VIDA E WATCHERS ---
 
     onMounted(async () => {
       isLoadingHistory.value = true;
@@ -337,7 +389,7 @@ export default defineComponent({
           await userStore.loadChatHistory();
         }
       } catch (error) {
-        console.error("Erro no onMounted ao carregar histórico:", error);
+        console.error("Erro load history:", error);
       } finally {
         isLoadingHistory.value = false;
         await nextTick(() => scrollToBottom());
@@ -351,13 +403,6 @@ export default defineComponent({
       await nextTick(() => scrollToBottom());
     }, { deep: true });
 
-    watch(() => userStore.isAuthenticated, (isAuth) => {
-      if (!isAuth) {
-        document.removeEventListener('click', handleClickOutside);
-      }
-    });
-
-
     return {
       user,
       chatHistory,
@@ -365,21 +410,24 @@ export default defineComponent({
       loading,
       isTyping,
       isLoadingHistory,
-      soundEnabled,
       showEmojiPicker,
       isNutritionistOnline,
       messagesContainer,
       messageInput,
       emojiPickerRef, 
       quickEmojis,
+      fileInput,
+      selectedImagePreview,
+      selectedImageBase64,
+      triggerFileInput,
+      handleFileUpload,
+      clearImage,
       sendMessage,
       sendQuickQuestion,
       formatTime,
       clearChat,
-      toggleSound,
       toggleEmojiPicker,
       addEmoji,
-      attachFile,
       copyMessage,
       renderMarkdown,
       giveFeedback
@@ -389,6 +437,7 @@ export default defineComponent({
 </script>
 
 <style scoped>
+/* ... (Styles inalterados omitidos para brevidade, adicionei apenas o novo abaixo) ... */
 .chat-container {
   display: flex;
   flex-direction: column;
@@ -565,6 +614,25 @@ export default defineComponent({
   word-break: break-word;
 }
 
+/* Estilo para a imagem enviada no chat */
+.message-image {
+  margin-top: 8px;
+}
+
+.message-image img {
+  max-width: 200px;
+  max-height: 250px;
+  border-radius: 12px;
+  border: 1px solid var(--card-border);
+  display: block;
+}
+
+/* Alinha a imagem à direita se for mensagem do próprio usuário */
+.own-message .message-image {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .own-message .message-content {
   background: var(--primary-color);
   color: white;
@@ -698,9 +766,66 @@ export default defineComponent({
   width: 100%;
 }
 
+.image-preview-container {
+  position: absolute;
+  bottom: 100%; 
+  left: 24px;
+  margin-bottom: 10px;
+  z-index: 5;
+}
+
+.preview-wrapper {
+  position: relative;
+  display: inline-block;
+  background: var(--card-bg);
+  padding: 4px;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  border: 1px solid var(--card-border);
+}
+
+.preview-img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
+}
+
+.remove-img-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  padding: 0;
+}
+
+.remove-img-btn:hover {
+  background: #dc2626;
+}
+
 .input-actions {
   display: flex;
   gap: 4px;
+}
+
+.input-actions .action-btn {
+    background: transparent;
+    color: var(--color-text-secondary);
+}
+.input-actions .action-btn:hover {
+    background: var(--card-border);
+    color: var(--primary-color);
 }
 
 .message-input-wrapper {
@@ -795,7 +920,6 @@ export default defineComponent({
   to { transform: rotate(360deg); }
 }
 
-/* Scrollbar personalizada */
 .chat-messages::-webkit-scrollbar {
   width: 6px;
 }
@@ -813,7 +937,6 @@ export default defineComponent({
   background: var(--color-text-secondary);
 }
 
-/* Responsividade */
 @media (max-width: 768px) {
   .chat-container {
     height: calc(100vh - 60px);
@@ -849,7 +972,6 @@ export default defineComponent({
   .message {
     max-width: 98%;
   }
-
 }
 
 .feedback-buttons {
@@ -883,16 +1005,14 @@ export default defineComponent({
   border-color: var(--primary-color);
 }
 
-/* --- ESTILOS ADICIONADOS PARA COMENTÁRIO DO NUTRICIONISTA --- */
-
 .nutritionist-comment-bubble {
-  background: #ffffff; /* Fundo amarelo claro (igual da supervisão) */
+  background: #ffffff;
   border: 1px solid #4759fd;
   border-radius: 8px;
   padding: 10px 14px;
   margin-top: 8px;
   max-width: 95%; 
-  color: #1f2937; /* Força texto escuro para legibilidade */
+  color: #1f2937;
   line-height: 1.4;
   word-wrap: break-word;
 }
@@ -908,11 +1028,10 @@ export default defineComponent({
   font-size: 0.8em;
   font-weight: 700;
   margin-bottom: 4px;
-  color: #3c09b4; /* Tom de marrom/laranja */
+  color: #3c09b4; 
 }
 
 .nutritionist-comment-bubble p {
   margin: 0;
 }
-
 </style>
