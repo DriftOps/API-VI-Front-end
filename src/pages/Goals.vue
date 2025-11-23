@@ -229,7 +229,15 @@ const weightHistory = ref<WeightLog[]>([]);
 const userProfile = ref<User | null>(null);
 const userPlanGoal = ref<UserPlanGoal>({ goalWeight: null, targetDate: null, goalType: null });
 const showGoalSetterModal = ref(false);
-const height = ref(1.70); // Valor padrão
+const height = ref(1.70);
+
+const goalTranslations: Record<string, string> = {
+  'WEIGHT_LOSS': 'Emagrecimento',
+  'MUSCLE_GAIN': 'Ganho de Massa Muscular',
+  'DIABETES_CONTROL': 'Controle de Diabetes',
+  'DIET_REEDUCATION': 'Reeducação Alimentar',
+  'PHYSICAL_MENTAL_PERFORMANCE': 'Performance Física e Mental'
+};
 
 // NOVO: Estado para o período do gráfico
 const selectedPeriod = ref<ChartPeriod>('3M'); // Define "3 Meses" como padrão
@@ -501,12 +509,17 @@ const daysUntilDeadline = computed<string | number>(() => {
    } catch { return '?'; }
 });
 const goalDescriptionText = computed<string>(() => {
-    const mainGoalText = userProfile.value?.goal ? userProfile.value.goal.replace('_', ' ').toLowerCase() : 'definir seu objetivo';
+    const rawGoal = userProfile.value?.goal;
+    const mainGoalText = rawGoal 
+        ? (goalTranslations[rawGoal] || rawGoal.replace(/_/g, ' ')) 
+        : 'definir seu objetivo';
+        
     if (userPlanGoal.value?.goalWeight) {
         return `Seu objetivo principal é ${mainGoalText}, buscando alcançar ${userPlanGoal.value.goalWeight}kg até ${formatDateGoal(userPlanGoal.value.targetDate)}.`;
     }
     return `Seu objetivo principal é ${mainGoalText}. Defina uma meta específica de peso e prazo!`;
 });
+
 const todayDate = computed(() => new Date().toISOString().split('T')[0]);
 const isGoalFormValid = computed(() => {
     return goalForm.goalWeight && goalForm.goalWeight > 0 &&

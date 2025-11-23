@@ -195,7 +195,11 @@ import {
 } from 'lucide-vue-next';
 
 // Função auxiliar para converter string em array e vice-versa
-const stringToArray = (str: string | undefined | null): string[] => str ? str.split(';').map(item => item.trim()).filter(Boolean) : [];
+const stringToArray = (str: string | undefined | null): string[] => {
+  if (!str) return [];
+  return str.split(/[;,]+/).map(item => item.trim()).filter(Boolean);
+};
+
 const arrayToString = (arr: string[] | undefined | null): string => arr ? arr.join('; ') : "";
 
 export default defineComponent({
