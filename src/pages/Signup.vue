@@ -5,21 +5,15 @@
       <MoonIcon v-else :size="18" />
     </button>
 
-    <div class="progress-bar-container">
-      <div class="progress-bar" :style="{ width: currentStep === 1 ? '50%' : '100%' }"></div>
-    </div>
-
-    <h1 class="signup-text">
-      {{ currentStep === 1 ? 'Criar Conta' : 'Anamnese' }}
-    </h1>
+    <h1 class="signup-text">Criar Conta</h1>
 
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
     <div v-if="successMessage" class="success-message">{{ successMessage }}</div>
     <div v-if="loading" class="loading">Criando conta...</div>
 
-    <form class="form-container" @submit.prevent="handleSubmit">
-      <div v-if="currentStep === 1" class="form-section">
-        <h3>Dados da Conta</h3>
+    <form class="form-container" @submit.prevent="signup">
+      <div class="form-section">
+        <h3>Dados Pessoais</h3>
         <input v-model="formData.name" placeholder="Nome completo" type="text" required />
         <input v-model="formData.email" placeholder="Email" type="email" required />
         <input v-model="formData.password" type="password" placeholder="Senha" required />
@@ -30,7 +24,7 @@
           <input v-model.number="formData.height" type="number" placeholder="Altura (cm)" />
         </div>
 
-        <input v-model="formData.birthDate" type="date" placeholder="Data de nascimento" />
+        <input v-model="formData.birthDate" type="date" placeholder="Data de nascimento" class="input-full-width" />
 
         <div class="form-row">
           <label class="section-label">Sexo</label>
@@ -43,158 +37,12 @@
         </div>
         
         <div class="button-group-single">
-          <button type="button" @click="nextStep" :disabled="!canGoNextStep1" class="signup-btn">
-            Próximo
+          <button type="submit" :disabled="loading || !canSubmit" class="signup-btn">
+            Criar Conta
           </button>
         </div>
 
         <p v-if="!passwordsMatch" class="password-error">As senhas não coincidem</p>
-      </div>
-
-      <div v-if="currentStep === 2" class="form-section anamnese-section">
-        <h3>Informações de Saúde</h3>
-        
-        <p class="intro-text">Agora, vamos conhecer um pouco mais sobre sua saúde e hábitos!</p>
-
-        <div class="section">
-          <label class="section-label">Qual o principal motivo da sua consulta? *</label>
-          <div class="radio-grid">
-            <label><input type="radio" value="Emagrecimento" v-model="formData.mainReason" /> Emagrecimento</label>
-            <label><input type="radio" value="Ganho de massa muscular" v-model="formData.mainReason" /> Ganho de massa muscular</label>
-            <label><input type="radio" value="Controle de diabetes" v-model="formData.mainReason" /> Controle de diabetes</label>
-            <label><input type="radio" value="Reeducação alimentar" v-model="formData.mainReason" /> Reeducação alimentar</label>
-            <label><input type="radio" value="Performance física e mental" v-model="formData.mainReason" /> Performance física e mental</label>
-          </div>
-        </div>
-
-        <div class="section">
-          <label class="section-label">Você possui ou já teve alguma das condições abaixo? *</label>
-          <div class="checkbox-grid">
-            <label v-for="c in healthConditions" :key="c">
-              <input type="checkbox" :value="c" v-model="formData.healthConditions" /> {{ c }}
-            </label>
-          </div>
-          <input v-model="formData.healthConditionsOther" placeholder="Outro:" />
-        </div>
-
-        <div class="section">
-          <label class="section-label">Possui alguma alergia ou intolerância? *</label>
-          <div class="checkbox-grid">
-            <label v-for="a in allergiesOptions" :key="a">
-              <input type="checkbox" :value="a" v-model="formData.allergies" /> {{ a }}
-            </label>
-          </div>
-          <input v-model="formData.allergiesOther" placeholder="Outro:" />
-        </div>
-
-        <div class="section">
-          <label class="section-label">Você já realizou alguma cirurgia? *</label>
-          <div class="checkbox-grid">
-            <label v-for="s in surgeriesOptions" :key="s">
-              <input type="checkbox" :value="s" v-model="formData.surgeries" /> {{ s }}
-            </label>
-          </div>
-          <input v-model="formData.surgeriesOther" placeholder="Outro:" />
-        </div>
-
-        <div class="section">
-          <label class="section-label">Atividade física — Agora vamos entender seus hábitos</label>
-          <p class="muted">Qual atividade mais te descreve? *</p>
-          <div class="radio-grid">
-            <label v-for="a in activityOptions" :key="a">
-              <input type="radio" :value="a" v-model="formData.activityType" /> {{ a }}
-            </label>
-          </div>
-
-          <p class="muted">Frequência</p>
-          <div class="radio-group">
-            <label><input type="radio" value="Nenhuma vez por semana" v-model="formData.activityFrequency" /> Nenhuma vez por semana</label>
-            <label><input type="radio" value="1-2x por semana" v-model="formData.activityFrequency" /> 1-2x por semana</label>
-            <label><input type="radio" value="3-4x por semana" v-model="formData.activityFrequency" /> 3-4x por semana</label>
-            <label><input type="radio" value="5 ou mais vezes por semana" v-model="formData.activityFrequency" /> 5 ou mais vezes por semana</label>
-          </div>
-
-          <p class="muted">Quantos minutos por dia de Atividade física?</p>
-          <div class="radio-group">
-            <label><input type="radio" value="Nenhum Minuto" v-model="formData.activityMinutes" /> Nenhum Minuto</label>
-            <label><input type="radio" value="30 min" v-model="formData.activityMinutes" /> 30 min</label>
-            <label><input type="radio" value="60 min" v-model="formData.activityMinutes" /> 60 min</label>
-            <label><input type="radio" value="90 min" v-model="formData.activityMinutes" /> 90 min</label>
-          </div>
-        </div>
-
-        <div class="section">
-          <label class="section-label">Como está seu sono</label>
-          <p class="muted">Qualidade do sono *</p>
-          <div class="radio-group">
-            <label><input type="radio" value="Boa" v-model="formData.sleepQuality" /> Boa</label>
-            <label><input type="radio" value="Regular" v-model="formData.sleepQuality" /> Regular</label>
-            <label><input type="radio" value="Ruim" v-model="formData.sleepQuality" /> Ruim</label>
-          </div>
-
-          <p class="muted">Acorda durante a noite? *</p>
-          <div class="radio-group">
-            <label><input type="radio" value="Não" v-model="formData.wakesAtNight" /> Não</label>
-            <label><input type="radio" value="Pelo menos 1x" v-model="formData.wakesAtNight" /> Pelo menos 1 x</label>
-            <label><input type="radio" value="Mais que 1x por noite" v-model="formData.wakesAtNight" /> Mais que 1 x por noite</label>
-          </div>
-        </div>
-
-        <div class="section">
-          <label class="section-label">Rotina e Hábitos</label>
-          <p class="muted">Quantas vezes por semana você evacua? *</p>
-          <div class="radio-group">
-            <label><input type="radio" value="Todo dia" v-model="formData.bowelFrequency" /> Todo dia</label>
-            <label><input type="radio" value="5 x por semana" v-model="formData.bowelFrequency" /> 5 x por semana</label>
-            <label><input type="radio" value="3 x por semana" v-model="formData.bowelFrequency" /> 3 x por semana</label>
-            <label><input type="radio" value="1 x por semana" v-model="formData.bowelFrequency" /> 1 x por semana</label>
-          </div>
-
-          <p class="muted">Nível de estresse *</p>
-          <div class="radio-group">
-            <label><input type="radio" value="Baixo" v-model="formData.stressLevel" /> Baixo</label>
-            <label><input type="radio" value="Moderado" v-model="formData.stressLevel" /> Moderado</label>
-            <label><input type="radio" value="Alto" v-model="formData.stressLevel" /> Alto</label>
-          </div>
-
-          <p class="muted">Consumo de álcool *</p>
-          <div class="radio-group">
-            <label><input type="radio" value="Não consome" v-model="formData.alcohol" /> Não consome</label>
-            <label><input type="radio" value="Socialmente 1-2 x por semana" v-model="formData.alcohol" /> Socialmente 1-2x por semana</label>
-            <label><input type="radio" value="Frequente 3-4 x por semana" v-model="formData.alcohol" /> Frequente 3-4x por semana</label>
-            <label><input type="radio" value="Uso diário" v-model="formData.alcohol" /> Uso diário</label>
-          </div>
-
-           <p class="muted">Tabagismo *</p>
-          <div class="radio-group">
-            <label><input type="radio" :value="true" v-model="formData.smoking" /> Sim</label>
-            <label><input type="radio" :value="false" v-model="formData.smoking" /> Não</label>
-          </div>
-
-          <p class="muted">Hidratação (quantos litros por dia) *</p>
-          <div class="radio-group">
-            <label><input type="radio" value="Menos de 1L" v-model="formData.hydration" /> Menos de 1L</label>
-            <label><input type="radio" value="Entre 1L e 2L" v-model="formData.hydration" /> Entre 1L e 2L</label>
-            <label><input type="radio" value="Entre 2L e 3L" v-model="formData.hydration" /> Entre 2L e 3L</label>
-            <label><input type="radio" value="Mais de 3L" v-model="formData.hydration" /> Mais de 3L</label>
-          </div>
-        </div>
-
-        <div class="section">
-          <label class="section-label">Medicações</label>
-          <p class="muted">Faz uso de medicações contínuas (incluindo suplementos)? *</p>
-          <div class="radio-group">
-            <label><input type="radio" :value="true" v-model="formData.continuousMedication" /> Sim</label>
-            <label><input type="radio" :value="false" v-model="formData.continuousMedication" /> Não</label>
-          </div>
-        </div>
-
-        <div class="button-group">
-          <button type="button" @click="prevStep" class="signup-btn secondary-btn">Voltar</button>
-          <button type="submit" :disabled="loading" class="signup-btn">
-            {{ loading ? 'Criando conta...' : 'Concluir Cadastro' }}
-          </button>
-        </div>
       </div>
     </form>
 
@@ -209,80 +57,13 @@
 import { defineComponent, ref, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import { Sun as SunIcon, Moon as MoonIcon } from "lucide-vue-next";
-import { type User, type UserAnamnesis } from "@/types/User"; // Ajuste o caminho se necessário
-
-// Interface para a resposta da criação do usuário
-interface SignupResponse extends User { }
 
 export default defineComponent({
   name: "Signup",
   components: { SunIcon, MoonIcon },
   setup() {
     const router = useRouter();
-    const currentStep = ref(1);
-
-    // Mapeamentos de valores do formulário para os ENUMs do backend
-    const MAPPERS = {
-      mainGoal: {
-        "Emagrecimento": "WEIGHT_LOSS",
-        "Ganho de massa muscular": "MUSCLE_GAIN",
-        "Controle de diabetes": "DIABETES_CONTROL",
-        "Reeducação alimentar": "DIET_REEDUCATION",
-        "Performance física e mental": "PHYSICAL_MENTAL_PERFORMANCE",
-      },
-      activityType: {
-        "Sedentário(a)": "SEDENTARY",
-        "Caminhada": "WALKING",
-        "Musculação": "WEIGHT_TRAINING",
-        "Corrida": "RUNNING",
-        "Crossfit": "CROSSFIT",
-        "Natação": "SWIMMING",
-        "Luta": "FIGHT",
-        "Outro": "OTHER",
-      },
-      frequency: {
-        "Nenhuma vez por semana": "NONE",
-        "1-2x por semana": "ONE_2X_WEEK",
-        "3-4x por semana": "THREE_4X_WEEK",
-        "5 ou mais vezes por semana": "FIVE_X_OR_MORE",
-      },
-      sleepQuality: {
-        "Boa": "GOOD",
-        "Regular": "REGULAR",
-        "Ruim": "BAD",
-      },
-      wakesAtNight: {
-        "Não": "NO",
-        "Pelo menos 1x": "ONCE",
-        "Mais que 1x por noite": "MORE_THAN_ONCE",
-      },
-      bowelFrequency: {
-        "Todo dia": "EVERY_DAY",
-        "5 x por semana": "FIVE_X_WEEK",
-        "3 x por semana": "THREE_X_WEEK",
-        "1 x por semana": "ONE_X_WEEK",
-      },
-      stressLevel: {
-        "Baixo": "LOW",
-        "Moderado": "MODERATE",
-        "Alto": "HIGH",
-      },
-      alcohol: {
-        "Não consome": "DOES_NOT_CONSUME",
-        "Socialmente 1-2x por semana": "SOCIAL_1_2X_WEEK",
-        "Frequente 3-4x por semana": "FREQUENT_3_4X_WEEK",
-        "Uso diário": "DAILY_USE",
-      },
-      hydration: {
-        "Menos de 1L": "LESS_THAN_1L",
-        "Entre 1L e 2L": "BETWEEN_1_2L",
-        "Entre 2L e 3L": "BETWEEN_2_3L",
-        "Mais de 3L": "MORE_THAN_3L",
-      },
-    };
-
     const formData = ref({
-      // Etapa 1: Dados do Usuário
       name: "",
       email: "",
       password: "",
@@ -290,26 +71,6 @@ export default defineComponent({
       height: undefined as number | undefined,
       birthDate: "",
       gender: "",
-
-      // Etapa 2: Anamnese
-      mainReason: "",
-      healthConditions: [] as string[],
-      healthConditionsOther: "",
-      allergies: [] as string[],
-      allergiesOther: "",
-      surgeries: [] as string[],
-      surgeriesOther: "",
-      activityType: "",
-      activityFrequency: "",
-      activityMinutes: "",
-      sleepQuality: "",
-      wakesAtNight: "",
-      bowelFrequency: "",
-      stressLevel: "",
-      alcohol: "",
-      smoking: false, // Inicia como booleano
-      hydration: "",
-      continuousMedication: false, // Inicia como booleano
     });
 
     const confirmPassword = ref("");
@@ -317,50 +78,17 @@ export default defineComponent({
     const errorMessage = ref("");
     const successMessage = ref("");
     const darkMode = ref(localStorage.getItem("theme") === "dark");
-
     const API_URL = "http://localhost:8080/api";
 
-    const healthConditions = [
-      "Diabetes tipo 1", "Diabetes tipo 2", "Hipertensão arterial",
-      "Dislipidemia (colesterol, triglicerídeos)", "Doença renal", "Doença hepática",
-      "Gastrite / refluxo", "Intestino preso / diarreia", "Osteoporose",
-      "Doença cardiovascular (infarto, insuficiência cardíaca)", "Câncer",
-      "Depressão / Ansiedade", "Doenças autoimunes",
-    ];
-    const allergiesOptions = ["Nenhuma", "Intolerância à lactose", "Sensibilidade ao glúten / doença celíaca", "Alergia alimentar", "Alergia medicamentosa"];
-    const surgeriesOptions = ["Nenhuma", "Bariátrica", "Vesícula", "Hérnia de hiato (cirurgia do refluxo)", "Ortopédica", "Cesárea / Ginecológica"];
-    const activityOptions = ["Sedentário(a)", "Caminhada", "Musculação", "Corrida", "Crossfit", "Natação", "Luta", "Outro"];
-
     const passwordsMatch = computed(() => formData.value.password === confirmPassword.value && formData.value.password.length > 0);
-    const canGoNextStep1 = computed(() => !!formData.value.name && !!formData.value.email && passwordsMatch.value);
-
-    const nextStep = () => {
-      if (!canGoNextStep1.value) {
-        errorMessage.value = "Preencha nome, email e senha corretamente para prosseguir.";
-        return;
-      }
-      errorMessage.value = "";
-      currentStep.value = 2;
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    };
-
-    const prevStep = () => {
-      errorMessage.value = "";
-      currentStep.value = 1;
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    };
+    const canSubmit = computed(() => !!formData.value.name && !!formData.value.email && passwordsMatch.value);
 
     const signup = async () => {
-      if (!formData.value.mainReason) {
-        errorMessage.value = "O principal motivo da consulta é obrigatório.";
-        return;
-      }
       loading.value = true;
       errorMessage.value = "";
       successMessage.value = "";
 
       try {
-        // --- ETAPA 1: Criar o usuário ---
         const userPayload = {
           name: formData.value.name,
           email: formData.value.email,
@@ -379,59 +107,17 @@ export default defineComponent({
 
         if (!userResponse.ok) {
           const errorData = await userResponse.json();
-          throw new Error(errorData.message || "Falha ao criar a conta do usuário.");
+          throw new Error(errorData.message || "Falha ao criar a conta.");
         }
 
-        const createdUser: SignupResponse = await userResponse.json();
-        const userId = createdUser!.id;
-
-        // --- ETAPA 2: Criar a anamnese ---
-        const anamnesisPayload: Omit<UserAnamnesis, 'id'> = {
-          userId,
-          mainGoal: MAPPERS.mainGoal[formData.value.mainReason as keyof typeof MAPPERS.mainGoal],
-          medicalConditions: [...formData.value.healthConditions, formData.value.healthConditionsOther].filter(Boolean).join('; '),
-          allergies: [...formData.value.allergies, formData.value.allergiesOther].filter(Boolean).join('; '),
-          surgeries: [...formData.value.surgeries, formData.value.surgeriesOther].filter(Boolean).join('; '),
-          activityType: MAPPERS.activityType[formData.value.activityType as keyof typeof MAPPERS.activityType],
-          frequency: MAPPERS.frequency[formData.value.activityFrequency as keyof typeof MAPPERS.frequency],
-          activityMinutesPerDay: parseInt(formData.value.activityMinutes) || 0,
-          sleepQuality: MAPPERS.sleepQuality[formData.value.sleepQuality as keyof typeof MAPPERS.sleepQuality],
-          wakesDuringNight: MAPPERS.wakesAtNight[formData.value.wakesAtNight as keyof typeof MAPPERS.wakesAtNight],
-          bowelFrequency: MAPPERS.bowelFrequency[formData.value.bowelFrequency as keyof typeof MAPPERS.bowelFrequency],
-          stressLevel: MAPPERS.stressLevel[formData.value.stressLevel as keyof typeof MAPPERS.stressLevel],
-          alcoholUse: MAPPERS.alcohol[formData.value.alcohol as keyof typeof MAPPERS.alcohol],
-          smoking: formData.value.smoking,
-          hydrationLevel: MAPPERS.hydration[formData.value.hydration as keyof typeof MAPPERS.hydration],
-          continuousMedication: formData.value.continuousMedication,
-        };
-
-        const anamnesisResponse = await fetch(`${API_URL}/anamnesis/${userId}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(anamnesisPayload)
-        });
-
-        if (!anamnesisResponse.ok) {
-          const errorData = await anamnesisResponse.json();
-          throw new Error(errorData.message || 'Conta criada, mas falha ao salvar dados de saúde.');
-        }
-
-        successMessage.value = "Conta criada com sucesso! Você será redirecionado para o login.";
-        setTimeout(() => router.push("/"), 3000); // ✅ CORREÇÃO: Redireciona para /login
+        successMessage.value = "Conta criada com sucesso! Aguarde a aprovação do admin.";
+        setTimeout(() => router.push("/"), 3000);
 
       } catch (error: any) {
-        console.error("Erro no processo de signup:", error);
+        console.error("Erro no signup:", error);
         errorMessage.value = error.message;
       } finally {
         loading.value = false;
-      }
-    };
-
-    const handleSubmit = () => {
-      if (currentStep.value === 1) {
-        nextStep();
-      } else {
-        signup();
       }
     };
 
@@ -462,17 +148,9 @@ export default defineComponent({
       successMessage,
       darkMode,
       passwordsMatch,
-      currentStep,
-      nextStep,
-      prevStep,
+      canSubmit,
       signup,
       toggleTheme,
-      healthConditions,
-      allergiesOptions,
-      surgeriesOptions,
-      activityOptions,
-      canGoNextStep1,
-      handleSubmit,
     };
   },
 });
@@ -483,17 +161,17 @@ export default defineComponent({
 
 .signup-page {
   width: 1100px;
-  max-width: 1100px; /* ✅ CORREÇÃO: Limita a largura máxima na página */
+  max-width: 1100px; 
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   background-color: #FFFFFF;
-  padding: 40px 20px; /* ✅ CORREÇÃO: Ajuste no padding */
+  padding: 40px 20px; 
   box-sizing: border-box;
   font-family: 'Inter', sans-serif;
-  margin: 0 auto; /* ✅ CORREÇÃO: Centraliza o container */
+  margin: 0 auto; 
 }
 
 /* Barra de progresso */
@@ -572,7 +250,7 @@ button:disabled {
   font-size: 36px;
   color: #555;
   margin-bottom: 30px;
-  text-align: center; /* ✅ CORREÇÃO: Garante o alinhamento */
+  text-align: center; /*  CORREÇÃO: Garante o alinhamento */
 }
 
 .signup-page.dark .signup-text {
@@ -580,7 +258,7 @@ button:disabled {
 }
 
 .form-container {
-  display: flex; /* ✅ CORREÇÃO: Usa flex para garantir que o filho ocupe o espaço */
+  display: flex; 
   flex-direction: column;
   width: 1100px;
   max-width: 800px; /* Limita a largura do formulário */
@@ -589,7 +267,7 @@ button:disabled {
 
 .form-section {
   background: white;
-  padding: 25px; /* ✅ CORREÇÃO: Mais respiro interno */
+  padding: 25px; /*  CORREÇÃO: Mais respiro interno */
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* ✅ CORREÇÃO: Sombra mais suave */
 }
@@ -756,7 +434,7 @@ textarea:focus {
 .login-link {
   color: #4f46e5;
   font-weight: bold;
-  text-decoration: none; /* ✅ CORREÇÃO: Remove sublinhado padrão */
+  text-decoration: none; /*  CORREÇÃO: Remove sublinhado padrão */
 }
 .login-link:hover {
   text-decoration: underline;
@@ -796,7 +474,7 @@ textarea:focus {
 
 
 .theme-btn {
-  position: absolute; /* ✅ CORREÇÃO: Posiciona o botão de tema */
+  position: absolute; /* CORREÇÃO: Posiciona o botão de tema */
   top: 20px;
   right: 20px;
   margin-top: 0;
