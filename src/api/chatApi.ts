@@ -1,18 +1,18 @@
 import { useUserStore } from "@/stores/user";
-import { useMealStore } from "@/stores/meal"; 
+import { useMealStore } from "@/stores/meal";
 import type { ChatMessage } from '@/stores/user'
 
-const API_URL = 'http://localhost:8080/api/chat' 
-
+const API_URL = 'http://localhost:8080/api/chat'
 
 interface ChatMessageDTO {
   id: number;
   sender: 'user' | 'assistant';
   message: string;
-  image: dto.image,
+  image: string; // Corrigido de 'dto.image' para 'string'
   timestamp: string;
   nutritionistComment?: string;
   userId: number;
+  userFeedback?: 'positive' | 'negative' | null;
 }
 
 export async function fetchChatHistory(): Promise<ChatMessage[]> {
@@ -24,7 +24,7 @@ export async function fetchChatHistory(): Promise<ChatMessage[]> {
     headers: { 'Authorization': `Bearer ${token}` }
   });
   if (!response.ok) throw new Error('Erro ao buscar histórico');
-  
+
   const dtos: ChatMessageDTO[] = await response.json();
 
   return dtos.map(dto => ({
@@ -33,18 +33,26 @@ export async function fetchChatHistory(): Promise<ChatMessage[]> {
     message: dto.message,
     image: dto.image,
     timestamp: new Date(dto.timestamp),
-    nutritionistComment: dto.nutritionistComment, 
-    feedback: dto.userFeedback || null        
+    nutritionistComment: dto.nutritionistComment,
+    feedback: dto.userFeedback || null
   }));
 }
 
-export async function postNewMessage(message: string, image?: string): Promise<ChatMessage> {
+// --- FUNÇÃO CORRIGIDA E UNIFICADA AQUI ---
+export async function postNewMessage(message: string, image?: string, lat?: number, lng?: number): Promise<ChatMessage> {
   const token = localStorage.getItem('token');
-  
+
   // Monta o corpo da requisição
   const body: any = { message: message };
+  
   if (image) {
     body.image = image; // Adiciona a imagem em Base64 se existir
+  }
+
+  // Lógica de Geolocalização (O que faltava na primeira versão)
+  if (lat && lng) {
+      body.latitude = lat;
+      body.longitude = lng;
   }
 
   const response = await fetch(`${API_URL}/send`, {
@@ -57,7 +65,7 @@ export async function postNewMessage(message: string, image?: string): Promise<C
   });
 
   if (!response.ok) throw new Error('Erro ao enviar mensagem');
-  
+
   const dto: ChatMessageDTO = await response.json();
 
   return {
@@ -78,15 +86,14 @@ export async function postNewMessage(message: string, image?: string): Promise<C
  */
 export async function postFeedback(messageId: number, feedback: 'positive' | 'negative' | null): Promise<void> {
   const token = localStorage.getItem('token');
-  
+
   const response = await fetch(`${API_URL}/feedback/${messageId}`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
     },
-
-    body: JSON.stringify({ feedback: feedback }) 
+    body: JSON.stringify({ feedback: feedback })
   });
 
   if (!response.ok) {
@@ -94,6 +101,4 @@ export async function postFeedback(messageId: number, feedback: 'positive' | 'ne
     console.error('Erro ao enviar feedback:', errorText);
     throw new Error(`Erro ao enviar feedback: ${errorText}`);
   }
-  
-  
 }
