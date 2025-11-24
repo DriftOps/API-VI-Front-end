@@ -11,6 +11,8 @@ export interface ChatMessage {
   message: string
   image?: string
   timestamp: Date
+  nutritionistComment?: string
+  feedback?: 'positive' | 'negative' | null
 }
 
 export const useUserStore = defineStore('user', () => {
