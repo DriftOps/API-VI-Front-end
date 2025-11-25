@@ -24,7 +24,11 @@
               <span class="nav-text">Refeições</span>
             </router-link>
 
+<<<<<<< Updated upstream
             <router-link to="/meal-plan" class="nav-item" active-class="active">
+=======
+            <router-link to="/diet" class="nav-item" active-class="active">
+>>>>>>> Stashed changes
               <UtensilsIcon :size="20" class="nav-icon" />
               <span class="nav-text">Plano Alimentar</span>
             </router-link>
@@ -38,7 +42,7 @@
               <UserIcon :size="20" class="nav-icon" />
               <span class="nav-text">Meu Perfil</span>
             </router-link>
-
+  
             <div class="education-section">
               <div class="section-label" v-if="!sidebarCollapsed">Educação</div>
               <router-link to="/recommendplaces" class="nav-item recommendplaces-item" active-class="active">
