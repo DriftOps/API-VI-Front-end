@@ -13,6 +13,7 @@ interface ChatMessageDTO {
   timestamp: string;
   nutritionistComment?: string;
   userId: number;
+  
 }
 
 export async function fetchChatHistory(): Promise<ChatMessage[]> {

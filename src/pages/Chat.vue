@@ -57,7 +57,15 @@
               <span class="message-time">{{ formatTime(message.timestamp) }}</span>
             </div>
             
-            <div class="message-content" v-if="message.message" v-html="renderMarkdown(message.message)"></div>
+            <div class="message-content" v-if="message.message">
+              
+              <div v-html="renderMarkdown(processMessage(message.message).text)"></div>
+
+              <PlaceList 
+                v-if="processMessage(message.message).places" 
+                :places="processMessage(message.message).places" 
+              />
+            </div>
 
             <div v-if="(message as any).image" class="message-image">
               <img :src="(message as any).image" alt="Foto enviada" />
@@ -93,11 +101,12 @@
                 <ThumbsDownIcon :size="16" />
               </button>
             </div>
+            
             <div v-if="message.from !== user?.name" class="message-actions">
               <button @click="copyMessage(message.message)" class="msg-action" title="Copiar mensagem">
                 <CopyIcon :size="14" />
               </button>
-              </div>
+            </div>
           </div>
         </div>
 
@@ -174,6 +183,9 @@ import { useUserStore } from '@/stores/user';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { postNewMessage, postFeedback } from "@/api/chatApi";
 import MarkdownIt from "markdown-it";
+// Import do novo componente Visual
+import PlaceList, { type Place } from '@/components/PlaceList.vue';
+
 // Ícones
 import {
   User as UserIcon,
@@ -195,6 +207,7 @@ export default defineComponent({
   name: 'Chat',
   components: {
     DashboardLayout,
+    PlaceList, // Registra o componente aqui
     UserIcon,
     UserCheckIcon,
     SendIcon,
@@ -232,6 +245,36 @@ export default defineComponent({
     const renderMarkdown = (text: string) => md.renderInline(text);
 
     const quickEmojis = ['😊', '👍', '❤️', '🔥', '💪', '🥗', '🍎', '💧', '🏃‍♂️', '🎯'];
+
+    // --- NOVA FUNÇÃO: Processar JSON de Locais ---
+    const processMessage = (rawMessage: string) => {
+      if (!rawMessage) return { text: '', places: null };
+
+      // Procura por um bloco de código JSON que contenha "locais_encontrados"
+      const jsonRegex = /```json\s*(\{[\s\S]*?"locais_encontrados"[\s\S]*?\})\s*```/;
+      const match = rawMessage.match(jsonRegex);
+
+      if (match) {
+        try {
+          const jsonStr = match[1];
+          const data = JSON.parse(jsonStr);
+          
+          // Remove o bloco JSON do texto para não duplicar visualmente
+          const cleanText = rawMessage.replace(match[0], '').trim();
+          
+          return {
+            text: cleanText,
+            places: data.locais_encontrados as Place[]
+          };
+        } catch (e) {
+          console.error("Erro ao processar JSON de locais:", e);
+          return { text: rawMessage, places: null };
+        }
+      }
+
+      // Se não achar JSON, retorna texto normal
+      return { text: rawMessage, places: null };
+    };
 
     // --- FUNÇÕES DE IMAGEM ---
 
@@ -273,17 +316,15 @@ export default defineComponent({
       loading.value = true; 
       const userMessageText = newMessage.value;
       
-      // 1. Adiciona mensagem Otimista (com propriedade 'image' extra)
-      // Usamos um cast 'as any' ou estendemos o tipo para aceitar 'image' localmente
       const userMessage = {
         id: Date.now(),
         from: user.value.name,
         message: userMessageText,
         timestamp: new Date(),
-        image: selectedImageBase64.value // <--- Guardamos a imagem aqui, separada
+        image: selectedImageBase64.value 
       };
       
-      userStore.addChatMessage(userMessage as ChatMessage); // Cast para entrar na store
+      userStore.addChatMessage(userMessage as ChatMessage);
 
       const textToSend = userMessageText;
       const imageToSend = selectedImageBase64.value;
@@ -296,7 +337,6 @@ export default defineComponent({
       await nextTick(() => scrollToBottom()); 
 
       try {
-        // 2. Envia para o backend
         const botMessage = await postNewMessage(textToSend, imageToSend || undefined);
 
         isTyping.value = false; 
@@ -430,14 +470,14 @@ export default defineComponent({
       addEmoji,
       copyMessage,
       renderMarkdown,
-      giveFeedback
+      giveFeedback,
+      processMessage // Expondo a nova função para o template
     };
   }
 });
 </script>
 
 <style scoped>
-/* ... (Styles inalterados omitidos para brevidade, adicionei apenas o novo abaixo) ... */
 .chat-container {
   display: flex;
   flex-direction: column;
@@ -612,6 +652,7 @@ export default defineComponent({
   word-wrap: break-word;
   white-space: normal;
   word-break: break-word;
+  min-width: 200px; /* Garante espaço para o carrossel de lugares */
 }
 
 /* Estilo para a imagem enviada no chat */
