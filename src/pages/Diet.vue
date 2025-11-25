@@ -67,6 +67,7 @@
               <span class="stat-label">Duração</span>
               <span class="stat-value">{{ formatDate(diet.startDate, false, true) }} até {{ formatDate(diet.endDate, false, true) }}</span>
             </div>
+
             <div class="stat-card">
               <div class="stat-icon-bg" style="background-color: #eef2ff; color: #6366f1;">
                 <FlagIcon :size="16" />
@@ -74,12 +75,21 @@
               <span class="stat-label">Meta de Peso</span>
               <span class="stat-value">{{ diet.initialWeight }} kg &rarr; {{ diet.targetWeight }} kg</span>
             </div>
+
             <div class="stat-card">
               <div class="stat-icon-bg" style="background-color: #fefce8; color: #eab308;">
                 <TargetIcon :size="16" />
               </div>
               <span class="stat-label">Meta Calórica Base</span>
               <span class="stat-value">{{ diet.baseDailyCalories }} kcal</span>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon-bg" style="background-color: #fff1f2; color: #be123c;">
+                <ShieldCheckIcon :size="16" />
+              </div>
+              <span class="stat-label">Piso Metabólico (TMB)</span>
+              <span class="stat-value">{{ diet.safeMetabolicFloor }} kcal</span>
             </div>
           </div>
         </div>
@@ -250,11 +260,6 @@
                </div>
              </div>
           </div>
-          
-          <div class="mt-2 text-xs text-gray-400 text-center">
-             Piso Metabólico Seguro (TMB): <strong>{{ diet.safeMetabolicFloor }} kcal</strong>
-           </div>
-
       </div>
     </div>
   </DashboardLayout>
@@ -266,16 +271,17 @@
   import { useDietStore } from '@/stores/diet';
   import DashboardLayout from '@/layouts/DashboardLayout.vue';
   import { 
-    Loader as LoaderIcon,
-    Target as TargetIcon,
-    Trash2 as Trash2Icon,
-    ClipboardPlus as ClipboardPlusIcon,
-    AlertTriangle as AlertTriangleIcon,
-    UserCheck as UserCheckIcon,
-    Copy as CopyIcon,
-    Calendar as CalendarIcon, 
-    Flag as FlagIcon          
-  } from 'lucide-vue-next';
+  Loader as LoaderIcon,
+  Target as TargetIcon,
+  Trash2 as Trash2Icon,
+  ClipboardPlus as ClipboardPlusIcon,
+  AlertTriangle as AlertTriangleIcon,
+  UserCheck as UserCheckIcon,
+  Copy as CopyIcon,
+  Calendar as CalendarIcon, 
+  Flag as FlagIcon,
+  ShieldCheck as ShieldCheckIcon // <--- ADICIONE ESTE
+} from 'lucide-vue-next';
   import type { DietDailyTarget } from '@/api/dietApi';
   
   const dietStore = useDietStore();
@@ -559,8 +565,9 @@
   }
 
   .summary-stats {
-    display: grid;
-    grid-template-columns: 1fr;
+    display: flex;           /* Muda de Grid para Flex */
+    flex-wrap: wrap;         /* Permite quebrar para a linha de baixo */
+    justify-content: center; /* Centraliza tudo (inclusive o card que sobrar) */
     gap: 1rem;
   }
   
@@ -577,6 +584,17 @@
     padding: 1rem;
     display: flex;
     flex-direction: column;
+    
+    /* Configuração Flex para o card:
+       flex-grow: 1 (cresce para preencher espaços)
+       flex-shrink: 1 (encolhe se faltar espaço)
+       flex-basis: 260px (tamanho ideal inicial) */
+    flex: 1 1 260px; 
+    
+    /* Importante: Limita a largura máxima para o card "sozinho" 
+       não esticar até a borda da tela e ficar feio */
+    max-width: 400px; 
+    width: 100%; /* Garante que preencha em telas muito pequenas */
   }
   
   .stat-icon-bg {
