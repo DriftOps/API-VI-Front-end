@@ -13,6 +13,7 @@ export interface DietDailyTarget {
   consumedProteinG: number;
   consumedCarbsG: number;
   consumedFatsG: number;
+  suggestedMenu?: string;
 }
 
 export interface DietView {

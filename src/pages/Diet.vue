@@ -139,6 +139,29 @@
               :style="{ width: getProgressWidth(todayTarget) }"
             ></div>
           </div>
+
+          <div v-if="todayTarget.suggestedMenu" class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+            <button 
+              @click="toggleMenu(todayTarget.id)"
+              class="suggestion-btn"
+              :class="{ 'active': expandedMenus[todayTarget.id] }"
+            >
+              <div class="flex items-center gap-2">
+                <ScrollTextIcon :size="18" />
+                <span>{{ expandedMenus[todayTarget.id] ? 'Ocultar Sugestão do NutriX' : 'Ver Sugestão do NutriX' }}</span>
+              </div>
+              <ChevronDownIcon 
+                :size="16" 
+                class="transition-transform duration-200"
+                :class="{ 'rotate-180': expandedMenus[todayTarget.id] }"
+              />
+            </button>
+            
+            <div v-if="expandedMenus[todayTarget.id]" class="menu-content-wrapper">
+               <div class="markdown-content" v-html="renderMarkdown(todayTarget.suggestedMenu)"></div>
+            </div>
+          </div>
+
         </div>
 
         <div v-if="upcomingTargets.length > 0" class="mt-6">
@@ -187,11 +210,33 @@
               <div class="day-card-balance" :class="getBalanceClasses(day)">
                 Balanço: {{ getBalance(day) }} kcal
               </div>
+
+              <div v-if="day.suggestedMenu" class="mt-3 pt-2 border-t border-gray-100 dark:border-gray-700">
+                <button 
+                  @click="toggleMenu(day.id)"
+                  class="suggestion-btn"
+                  :class="{ 'active': expandedMenus[day.id] }"
+                >
+                  <div class="flex items-center gap-2">
+                    <ScrollTextIcon :size="16" />
+                    <span>{{ expandedMenus[day.id] ? 'Ocultar Sugestão' : 'Ver Sugestão' }}</span>
+                  </div>
+                  <ChevronDownIcon 
+                    :size="14" 
+                    class="transition-transform duration-200"
+                    :class="{ 'rotate-180': expandedMenus[day.id] }"
+                  />
+                </button>
+                
+                <div v-if="expandedMenus[day.id]" class="menu-content-wrapper">
+                  <div class="markdown-content" v-html="renderMarkdown(day.suggestedMenu)"></div>
+                </div>
+              </div>
   
               <button 
                 v-if="isFutureDate(day.targetDate)"
                 @click="editTarget(day)"
-                class="msg-action"
+                class="msg-action mt-2 w-full justify-center"
               >
                 <CopyIcon :size="14" /> Editar Meta
               </button>
@@ -233,6 +278,28 @@
               <div class="day-card-balance" :class="getBalanceClasses(day)">
                 Balanço: {{ getBalance(day) }} kcal
               </div>
+
+               <div v-if="day.suggestedMenu" class="mt-3 pt-2 border-t border-gray-100 dark:border-gray-700 opacity-75">
+                <button 
+                  @click="toggleMenu(day.id)"
+                  class="suggestion-btn"
+                >
+                  <div class="flex items-center gap-2">
+                    <ScrollTextIcon :size="14" />
+                    <span>{{ expandedMenus[day.id] ? 'Ocultar Sugestão' : 'Ver Sugestão' }}</span>
+                  </div>
+                   <ChevronDownIcon 
+                    :size="14" 
+                    class="transition-transform duration-200"
+                    :class="{ 'rotate-180': expandedMenus[day.id] }"
+                  />
+                </button>
+                
+                <div v-if="expandedMenus[day.id]" class="menu-content-wrapper">
+                   <div class="markdown-content" v-html="renderMarkdown(day.suggestedMenu)"></div>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
@@ -266,10 +333,11 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted } from 'vue';
+  import { computed, onMounted, ref } from 'vue';
   import { useRouter } from 'vue-router';
   import { useDietStore } from '@/stores/diet';
   import DashboardLayout from '@/layouts/DashboardLayout.vue';
+  import MarkdownIt from 'markdown-it'; // <--- Importação do Markdown Parser
   import { 
   Loader as LoaderIcon,
   Target as TargetIcon,
@@ -280,16 +348,35 @@
   Copy as CopyIcon,
   Calendar as CalendarIcon, 
   Flag as FlagIcon,
-  ShieldCheck as ShieldCheckIcon // <--- ADICIONE ESTE
+  ShieldCheck as ShieldCheckIcon,
+  ScrollText as ScrollTextIcon,
+  ChevronDown as ChevronDownIcon // <--- Adicionado Chevron
 } from 'lucide-vue-next';
   import type { DietDailyTarget } from '@/api/dietApi';
   
   const dietStore = useDietStore();
   const router = useRouter();
   
+  // Instância do Markdown-it
+  const md = new MarkdownIt({
+    breaks: true, // Converte quebras de linha em <br>
+    html: false   // Desabilita HTML puro por segurança (básico)
+  });
+
+  const renderMarkdown = (text: string) => {
+    if (!text) return '';
+    return md.render(text);
+  };
+
   const diet = computed(() => dietStore.diet);
   const isLoading = computed(() => dietStore.isLoading);
   const error = computed(() => dietStore.error);
+
+  const expandedMenus = ref<Record<number, boolean>>({});
+
+  const toggleMenu = (targetId: number) => {
+    expandedMenus.value[targetId] = !expandedMenus.value[targetId];
+  };
 
   const formatDate = (dateString: string, includeWeekday = false, short = false): string => {
     const date = new Date(dateString + 'T00:00:00'); 
@@ -336,10 +423,8 @@
       .sort((a, b) => new Date(b.targetDate).getTime() - new Date(a.targetDate).getTime()) || []; 
   });
 
-  // --- NOVO: Verifica se a meta foi alterada ---
   const isAdjusted = (day: DietDailyTarget): boolean => {
     if (!diet.value) return false;
-    // Se a meta ajustada for diferente da meta base E maior que 0
     return day.adjustedCalories !== diet.value.baseDailyCalories && day.adjustedCalories > 0;
   };
   
@@ -393,7 +478,7 @@
       return 'is-past-empty'; 
     }
     if (isAdjusted(day)) {
-        return 'is-adjusted'; // Estilo sutil para dias ajustados
+        return 'is-adjusted';
     }
     return '';
   };
@@ -770,4 +855,116 @@
     color: #bfdbfe;
   }
   .line-through { text-decoration: line-through; }
+  
+  /* --- NOVOS ESTILOS PARA O MENU DE SUGESTÃO --- */
+
+  /* Botão de Toggle */
+  .suggestion-btn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 10px 14px;
+    background-color: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    color: #4b5563;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .suggestion-btn:hover {
+    background-color: #e5e7eb;
+    color: #111827;
+  }
+  .suggestion-btn.active {
+    background-color: #e0e7ff;
+    border-color: #c7d2fe;
+    color: #4338ca;
+  }
+  .dark .suggestion-btn {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #d1d5db;
+  }
+  .dark .suggestion-btn:hover {
+    background-color: #4b5563;
+    color: #f9fafb;
+  }
+  .dark .suggestion-btn.active {
+    background-color: #312e81;
+    border-color: #4338ca;
+    color: #a5b4fc;
+  }
+
+  /* Wrapper do Conteúdo */
+  .menu-content-wrapper {
+    margin-top: 8px;
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+    animation: fadeIn 0.3s ease-out;
+  }
+  .dark .menu-content-wrapper {
+    background-color: #1f2937;
+    border-color: #374151;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* --- Estilos para o Markdown Renderizado (Deep Selector) --- */
+  :deep(.markdown-content) {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--color-text);
+  }
+  :deep(.markdown-content h1), 
+  :deep(.markdown-content h2), 
+  :deep(.markdown-content h3), 
+  :deep(.markdown-content h4) {
+    font-weight: 700;
+    margin-top: 1.2em;
+    margin-bottom: 0.6em;
+    color: var(--color-heading);
+    line-height: 1.3;
+  }
+  /* Remove margem do primeiro elemento para alinhar com o box */
+  :deep(.markdown-content > *:first-child) {
+    margin-top: 0;
+  }
+  :deep(.markdown-content p) {
+    margin-bottom: 1em;
+  }
+  :deep(.markdown-content ul) {
+    list-style-type: disc;
+    padding-left: 1.5em;
+    margin-bottom: 1em;
+  }
+  :deep(.markdown-content ol) {
+    list-style-type: decimal;
+    padding-left: 1.5em;
+    margin-bottom: 1em;
+  }
+  :deep(.markdown-content li) {
+    margin-bottom: 0.4em;
+  }
+  :deep(.markdown-content strong) {
+    font-weight: 700;
+    color: var(--primary-color); 
+  }
+  :deep(.markdown-content em) {
+    font-style: italic;
+    opacity: 0.9;
+  }
+  :deep(.markdown-content blockquote) {
+    border-left: 4px solid var(--primary-color);
+    padding-left: 1em;
+    color: var(--color-text-secondary);
+    font-style: italic;
+    margin: 1em 0;
+  }
 </style>
